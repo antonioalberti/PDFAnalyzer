@@ -15,7 +15,7 @@ def read_pdf(file_path):
     return text
 
 def extract_context(content, start, end, num_sentences=3):
-    # Encontre o início do contexto, movendo-se para trás no texto
+    # Find the start of the context by moving backward in the text
     context_start = start
     for _ in range(num_sentences):
         context_start = content.rfind('.', 0, context_start)
@@ -23,9 +23,9 @@ def extract_context(content, start, end, num_sentences=3):
             context_start = 0
             break
         else:
-            context_start += 1  # avance após o ponto
+            context_start += 1  # move past the period
 
-    # Encontre o fim do contexto, movendo-se para a frente no texto
+    # Find the end of the context by moving forward in the text
     context_end = end
     for _ in range(num_sentences):
         context_end = content.find('.', context_end)
@@ -33,7 +33,7 @@ def extract_context(content, start, end, num_sentences=3):
             context_end = len(content)
             break
         else:
-            context_end += 1  # inclua o ponto
+            context_end += 1  # include the period
 
     return content[context_start:context_end].strip()
 
@@ -42,7 +42,7 @@ def find_occurrences_without_references(text, keywords):
     pages = text.split("Page ")
     for page in pages[1:]:
         if ":\n" not in page:
-            print(f"Separador não encontrado na página: {page[:100]}...")
+            print(f"Separator not found on page: {page[:100]}...")
             continue
 
         page_num, content = page.split(":\n", 1)
@@ -131,7 +131,7 @@ def main(file_path):
                                                              "representative services", "device mirroring",
                                                              "asset mirroring", "digital twin platform",
                                                              "asset simulation", "asset modeling"],
-        "Flexibility, programmability, and self-organization": ["Network Functions Virtualiation", "VNFs",
+        "Flexibility, programmability, and self-organization": ["Network Functions Virtualization", "VNFs",
                                                                 "Virtual Network Function",
                                                                 "software-defined controllers",
                                                                 "programmability", "self-organization",
@@ -172,7 +172,7 @@ def main(file_path):
                                                                   "incident response", "security architecture",
                                                                   "trust network", "provenance",],
         "Immutability": ["immutability", "blockchain", "smart contract", "decentralized", "DLT", "crypto", "IOTA",
-                         "ethereum", "tokenization", "digital merket", "CBDC", "micropayment", "data market",
+                         "ethereum", "tokenization", "digital market", "CBDC", "micropayment", "data market",
                          "spectrum market", "things economy", "things market", "infrastructure market",
                          "resource sharing", "virtual function market"],
         "Evolving Quantum technologies": ["quantum", "quantum computing", "quantum communication",
