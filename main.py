@@ -96,91 +96,15 @@ def classify_keywords(enabler_occurrences, enabler_keywords):
     return classified_keywords
 
 
-def main(file_path):
+import json
+import os
+
+def main(file_path, keywords_path):
     pdf_text = read_pdf(file_path)
 
-    enabler_keywords = {
-        "Naming, identification, and addressing": ["loss of transparency", "lack of addresses",
-                                                   "Network Address Translation", "NAT", "loss of provenance",
-                                                   "traceability", "addressing limitations", "adequate spaces",
-                                                   "address generation", "address integrity", "exponential increase",
-                                                   "amount of connected devices", "lack of provenance guarantees",
-                                                   "identifier/locator coupling", "corrupted addresses",
-                                                   "unique identification", "enough addresses"],
-        "Identifier and location splitting": ["identifier/locator coupling", "dual semantics", "ID", "Loc",
-                                              "mobile environment", "mobility", "attaching point",
-                                              "unique identification", "ID/Loc", "altering identification",
-                                              "change in location", "identity loss","location-independent"],
-        "Support for heterogeneous networks and adaptive network": ["different technologies",
-                                                                    "protocol stack", "adaptability", "flexibility",
-                                                                    "emerging paradigms","ICN", "SCN", "SDN",
-                                                                    "NFV", "network heterogeneity", "network diversity",
-                                                                    "Future Internet", "Information-Centric Networking",
-                                                                    "Service-Centric Networking",
-                                                                    "data-centric communications",
-                                                                    "named data", "content to services",
-                                                                    "heterogeneous networks",
-                                                                    "heterogeneous stacks",
-                                                                    "network adaptability"],
-        "Device or asset representation via digital twins": ["digital representation", "proxy service",
-                                                             "physical devices", "service layer", "digital twins",
-                                                             "physical exposure", "asset exposition",
-                                                             "asset representation", "visible industrial asset",
-                                                             "virtualized", "gateway services",
-                                                             "representing physical assets",
-                                                             "representative services", "device mirroring",
-                                                             "asset mirroring", "digital twin platform",
-                                                             "asset simulation", "asset modeling"],
-        "Flexibility, programmability, and self-organization": ["Network Functions Virtualization", "VNFs",
-                                                                "Virtual Network Function",
-                                                                "software-defined controllers",
-                                                                "programmability", "self-organization",
-                                                                "trust formation", "dynamic composeability",
-                                                                "contract-based operation",
-                                                                "lack of service orientation", "SOA",
-                                                                "Service Oriented Architecture", "SBA",
-                                                                "Service-Based Architecture", "flexibility",
-                                                                "adaptability", "middleware",
-                                                                "dynamically combined",
-                                                                "composeability",
-                                                                "dynamic contracting of services",
-                                                                "service lifecycle management",
-                                                                "real-time service configuration",
-                                                                "service collaboration",
-                                                                "business process integration",
-                                                                "cloud services", "microservices",
-                                                                "orchestration", "service discovery",
-                                                                "agile services", "service customization",
-                                                                "cross-platform compatibility",
-                                                                "reusability", "intelligent services",
-                                                                "edge computing services",
-                                                                "service management",
-                                                                "industrial service integration",
-                                                                "service governance", "service mapping",
-                                                                "service transformation", "SLA",
-                                                                "Service Level Agreement"],
-        "Security, privacy, provenance, traceability and trust": ["Name-based security", "formation of trust networks",
-                                                                  "self-verifying names",
-                                                                  "built-in security mechanisms","security",
-                                                                  "trust issues", "privacy", "trust", "cybersecurity",
-                                                                  "authentication", "authorization", "data protection",
-                                                                  "encryption", "secure communication",
-                                                                  "threat detection",
-                                                                  "risk management", "compliance", "network security",
-                                                                  "identity management", "access control",
-                                                                  "security policies", "vulnerability assessment",
-                                                                  "incident response", "security architecture",
-                                                                  "trust network", "provenance",],
-        "Immutability": ["immutability", "blockchain", "smart contract", "decentralized", "DLT", "crypto", "IOTA",
-                         "ethereum", "tokenization", "digital market", "CBDC", "micropayment", "data market",
-                         "spectrum market", "things economy", "things market", "infrastructure market",
-                         "resource sharing", "virtual function market"],
-        "Evolving Quantum technologies": ["quantum", "quantum computing", "quantum communication",
-                                          "quantum encryption", "QAC", "QC", "QI", "quantum internet",
-                                          "post-quantum"]
-    }
-
-
+    # Load enabler keywords from JSON file
+    with open(keywords_path, 'r', encoding='utf-8') as f:
+        enabler_keywords = json.load(f)
 
     enabler_occurrences = check_enabler_occurrences(pdf_text, enabler_keywords)
     total_matches_summary = print_occurrences(enabler_occurrences)
@@ -204,8 +128,9 @@ def main(file_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze a PDF for mentions of technological enablers")
     parser.add_argument("file_path", help="The path to the PDF file to analyze")
+    parser.add_argument("keywords_path", help="The path to the JSON file with enabler keywords")
     args = parser.parse_args()
-    main(args.file_path)
+    main(args.file_path, args.keywords_path)
 
 
 
