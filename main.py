@@ -98,8 +98,44 @@ def classify_keywords(enabler_occurrences, enabler_keywords):
 
 import json
 import os
+import openai
+from dotenv import load_dotenv
+
+def load_prompt(prompt_path):
+    with open(prompt_path, 'r', encoding='utf-8') as f:
+        return f.read()
+
+def analyze_with_openai(classified_keywords, prompt):
+    # Prepare the input text for the model
+    input_text = "Keyword Counts:\n"
+    for enabler, keyword_counter in classified_keywords.items():
+        input_text += f"{enabler}:\n"
+        for keyword, count in keyword_counter.items():
+            input_text += f"Keyword: {keyword}, Count: {count}\n"
+        input_text += "\n"
+
+    # Combine prompt and input text
+    full_prompt = prompt + "\n\n" + input_text
+
+    print("\nFull Prompt:")
+    print(full_prompt)
+
+    # Call OpenAI API
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": full_prompt}
+        ],
+        max_tokens=500,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content.strip()
 
 def main(file_path, keywords_path):
+    load_dotenv()  # Load environment variables from .env
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+
     pdf_text = read_pdf(file_path)
 
     # Load enabler keywords from JSON file
@@ -112,7 +148,6 @@ def main(file_path, keywords_path):
     classified_keywords = classify_keywords(enabler_occurrences, enabler_keywords)
 
     if any(enabler_occurrences.values()):
-        print("YES")
         print("Keyword Counts:")
         for enabler, keyword_counter in classified_keywords.items():
             if keyword_counter:
@@ -121,8 +156,16 @@ def main(file_path, keywords_path):
                     print(f"Keyword: {keyword}, Count: {count}")
                 print()
         print(f"Total Matches for All Families: {total_matches_summary}")
+
+        # Load prompt from file
+        prompt = load_prompt("prompt.txt")
+
+        # Analyze with OpenAI
+        analysis = analyze_with_openai(classified_keywords, prompt)
+        print("\nOpenAI Analysis:")
+        print(analysis)
     else:
-        print("NO")
+        print("None of enablers have been found in the files.")
 
 
 if __name__ == "__main__":
