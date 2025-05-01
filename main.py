@@ -120,8 +120,8 @@ def analyze_with_openai(classified_keywords, prompt):
     print("\nFull Prompt:")
     print(full_prompt)
 
-    # Call OpenAI API
-    response = openai.ChatCompletion.create(
+    # Call OpenAI API synchronously using new interface
+    response = openai.chat.completions.create(
         model="gpt-4",
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
@@ -157,13 +157,16 @@ def main(file_path, keywords_path):
                 print()
         print(f"Total Matches for All Families: {total_matches_summary}")
 
-        # Load prompt from file
-        prompt = load_prompt("prompt.txt")
+        if total_matches_summary < 200:
+            print("Small number of total matches... Unrepresentative source")
+        else:
+            # Load prompt from file
+            prompt = load_prompt("prompt.txt")
 
-        # Analyze with OpenAI
-        analysis = analyze_with_openai(classified_keywords, prompt)
-        print("\nOpenAI Analysis:")
-        print(analysis)
+            # Analyze with OpenAI
+            analysis = analyze_with_openai(classified_keywords, prompt)
+            print("\nOpenAI Analysis:")
+            print(analysis)
     else:
         print("None of enablers have been found in the files.")
 
