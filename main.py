@@ -1,8 +1,13 @@
 import argparse
+import openai
 import re
 from collections import Counter
+import pdfplumber
 from PyPDF2 import PdfReader
 import sys
+import json
+import os
+from dotenv import load_dotenv
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -95,17 +100,13 @@ def classify_keywords(enabler_occurrences, enabler_keywords):
 
     return classified_keywords
 
-
-import json
-import os
-import openai
-from dotenv import load_dotenv
-
 def load_prompt(prompt_path):
     with open(prompt_path, 'r', encoding='utf-8') as f:
         return f.read()
 
-def analyze_with_openai(classified_keywords, prompt):
+def analyze_with_requesty(classified_keywords, prompt, abstract):
+    import openai
+
     # Prepare the input text for the model
     input_text = "Keyword Counts:\n"
     for enabler, keyword_counter in classified_keywords.items():
@@ -115,21 +116,34 @@ def analyze_with_openai(classified_keywords, prompt):
         input_text += "\n"
 
     # Combine prompt and input text
-    full_prompt = prompt + "\n\n" + input_text
+    full_prompt = prompt + "\n\n" + "Abstract:\n" + abstract + "\n\n" + input_text
 
     print("\nFull Prompt:")
     print(full_prompt)
 
-    # Call OpenAI API synchronously using new interface
-    response = openai.chat.completions.create(
-        model="gpt-4",
+    # Initialize OpenAI client for Requesty API
+    api_key = os.getenv("ROUTER_API_KEY")
+    if not api_key:
+        raise ValueError("ROUTER_API_KEY not found in environment variables.")
+
+    client = openai.OpenAI(
+        api_key=api_key,
+        base_url="https://router.requesty.ai/v1",
+        default_headers={"Authorization": f"Bearer {api_key}"}
+    )
+
+    # Call the chat completion endpoint
+    response = client.chat.completions.create(
+        model="alibaba/qwen-turbo",
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": full_prompt}
-        ],
-        max_tokens=500,
-        temperature=0.7,
+        ]
     )
+
+    if not response.choices:
+        raise Exception("No response choices found.")
+
     return response.choices[0].message.content.strip()
 
 def main(file_path, keywords_path):
@@ -141,6 +155,40 @@ def main(file_path, keywords_path):
     # Load enabler keywords from JSON file
     with open(keywords_path, 'r', encoding='utf-8') as f:
         enabler_keywords = json.load(f)
+
+    # Extract abstract from PDF using pdfplumber for better accuracy
+    abstract = ""
+    with pdfplumber.open(file_path) as pdf:
+        # Search first 3 pages for abstract
+        for i in range(min(3, len(pdf.pages))):
+            page = pdf.pages[i]
+            text = page.extract_text()
+            if text:
+                # Look for "Abstract" in various capitalizations
+                abstract_match = re.search(r"\bAbstract\b|\bABSTRACT\b|\babstract\b", text)
+                if abstract_match:
+                    start = abstract_match.end()
+                    after_abstract = text[start:]
+                    # Heuristic: abstract ends at next section heading (all caps line) or double newline
+                    match = re.search(r"\n[A-Z][A-Z\s\-]{3,}\n", after_abstract)
+                    if match:
+                        next_match = re.search(r"\n[A-Z][A-Z\s\-]{3,}\n", after_abstract[match.end():])
+                        if next_match:
+                            abstract = after_abstract[:match.end() + next_match.start()].strip()
+                        else:
+                            abstract = after_abstract[:match.start()].strip()
+                    else:
+                        double_nl = after_abstract.find('\n\n')
+                        if double_nl != -1:
+                            second_double_nl = after_abstract.find('\n\n', double_nl + 2)
+                            if second_double_nl != -1:
+                                abstract = after_abstract[:second_double_nl].strip()
+                            else:
+                                abstract = after_abstract[:double_nl].strip()
+                        else:
+                            abstract = after_abstract[:600].strip()
+                    break
+        print(f"Extracted Abstract:\n{abstract}\n")
 
     enabler_occurrences = check_enabler_occurrences(pdf_text, enabler_keywords)
     total_matches_summary = print_occurrences(enabler_occurrences)
@@ -164,7 +212,7 @@ def main(file_path, keywords_path):
             prompt = load_prompt("prompt.txt")
 
             # Analyze with OpenAI
-            analysis = analyze_with_openai(classified_keywords, prompt)
+            analysis = analyze_with_openai(classified_keywords, prompt, abstract)
             print("\nOpenAI Analysis:")
             print(analysis)
     else:
