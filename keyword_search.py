@@ -6,48 +6,46 @@ class KeywordSearcher:
         self.enabler_keywords = enabler_keywords
 
     @staticmethod
-    def extract_context(content, start, end, num_sentences=3):
-        # Find the start of the context by moving backward in the text
-        context_start = start
-        for _ in range(num_sentences):
-            context_start = content.rfind('.', 0, context_start)
-            if context_start == -1:
-                context_start = 0
-                break
-            else:
-                context_start += 1  # move past the period
-
-        # Find the end of the context by moving forward in the text
-        context_end = end
-        for _ in range(num_sentences):
-            context_end = content.find('.', context_end)
-            if context_end == -1:
-                context_end = len(content)
-                break
-            else:
-                context_end += 1  # include the period
-
-        return content[context_start:context_end].strip()
+    def extract_context(content, start, end):
+        # Extract the full paragraph containing the occurrence
+        # Split content into paragraphs by double newlines or single newlines
+        paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
+        for paragraph in paragraphs:
+            para_start = content.find(paragraph)
+            para_end = para_start + len(paragraph)
+            if para_start <= start <= para_end:
+                return paragraph
+        # Fallback: return the original snippet if no paragraph found
+        return content[start:end].strip()
 
     @staticmethod
     def find_occurrences_without_references(text, keywords):
         results = []
         pages = text.split("Page ")
+        print(f"Total pages found: {len(pages)-1}")
         for page in pages[1:]:
             if ":\n" not in page:
                 print(f"Separator not found on page: {page[:100]}...")
                 continue
 
             page_num, content = page.split(":\n", 1)
+            print(f"Processing page number: {page_num}")
             references_start = re.search("REFERENCES", content, re.IGNORECASE)
             if references_start:
+                print("  References section found, truncating content.")
                 content = content[:references_start.start()]
             for keyword in keywords:
-                keyword_pattern = re.compile(rf"\\b{re.escape(keyword)}\\b|\\b{re.escape(keyword.replace('-', ' '))}\\b", re.IGNORECASE)
+                print(f"  Searching for keyword: '{keyword}'")
+                # Use regex with word boundaries for exact whole word match, case-insensitive
+                keyword_pattern = re.compile(rf"\\b{re.escape(keyword)}\\b", re.IGNORECASE)
                 matches = keyword_pattern.finditer(content)
+                found_any = False
                 for match in matches:
+                    found_any = True
                     context = KeywordSearcher.extract_context(content, match.start(), match.end())
                     results.append((int(page_num), keyword, context))
+                if not found_any:
+                    print(f"    Keyword '{keyword}' not found on this page.")
         return results
 
     def check_enabler_occurrences(self, pdf_text):
