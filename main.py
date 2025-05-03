@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 
 from keyword_search import KeywordSearcher
 from llm_query import LLMAnalyzer
-from abstract_extractor import AbstractExtractor
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -22,12 +21,14 @@ def read_pdf(file_path):
         page_text = page.extract_text()
         print(f"Extracted text from page {page_num}:")
         if page_text:
-            snippet = page_text[:500].replace('\n', ' ')
+            snippet = page_text[:10000].replace('\n', ' ')
             print(f"  {snippet}...")
             text += f"Page {page_num}:\n"
             text += page_text + "\n"
         else:
             print("  No text extracted from this page.")
+    #print("\n\n --> Full extracted text found:")
+    #print(text[:100000].replace('\n', ' '))
     return text
 
 def print_occurrences(enabler_occurrences):
@@ -62,15 +63,15 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
     print(f"Loaded {len(enabler_keywords)} enabler categories.")
 
     # Extract abstract using AbstractExtractor
-    print("Extracting abstract from PDF...")
-    abstract = AbstractExtractor.extract_abstract(file_path)
-    if abstract:
-        print(f"Extracted Abstract:\n{abstract}\n")
-    else:
-        print("No abstract found in the document.\n")
+    # print("Extracting abstract from PDF...")
+    # abstract = AbstractExtractor.extract_abstract(file_path)
+    # if abstract:
+    #     print(f"Extracted Abstract:\n{abstract}\n")
+    # else:
+    #     print("No abstract found in the document.\n")
 
     keyword_searcher = KeywordSearcher(enabler_keywords)
-    print("Searching for keyword occurrences in PDF text...")
+    print("\n\n -> Searching for keyword occurrences in PDF text...")
     enabler_occurrences = keyword_searcher.check_enabler_occurrences(pdf_text)
     total_occurrences = sum(len(occ) for occ in enabler_occurrences.values())
     print(f"Total keyword occurrences found: {total_occurrences}")
@@ -85,7 +86,7 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
         print(f"Processing occurrences for enabler category: {enabler} ({len(occurrences)} occurrences)")
         for idx, (page_num, keyword, paragraph) in enumerate(occurrences, start=1):
             print(f"\n\n-----> Occurrence {idx}: Keyword '{keyword}' on page {page_num}")
-            prompt_text = f"{keyword_occurrence_prompt}\n\nKeyword: {keyword}\nParagraph: {paragraph}\nContext: {abstract}"
+            prompt_text = f"{keyword_occurrence_prompt}\n\nKeyword: {keyword}\nParagraph: {paragraph}"
             try:
                 llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, model_name)
                 print(f"    LLM response: {llm_response}")

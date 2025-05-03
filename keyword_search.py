@@ -29,7 +29,7 @@ class KeywordSearcher:
                 continue
 
             page_num, content = page.split(":\n", 1)
-            print(f"Processing page number: {page_num}")
+            print(f"\n --> Processing page number: {page_num}")
             references_start = re.search("REFERENCES", content, re.IGNORECASE)
             if references_start:
                 print("  References section found, truncating content.")
@@ -37,12 +37,14 @@ class KeywordSearcher:
             for keyword in keywords:
                 print(f"  Searching for keyword: '{keyword}'")
                 # Use regex with word boundaries for exact whole word match, case-insensitive
-                keyword_pattern = re.compile(rf"\\b{re.escape(keyword)}\\b", re.IGNORECASE)
-                matches = keyword_pattern.finditer(content)
+                keyword_pattern = re.compile(rf"\b{re.escape(keyword)}\b", re.IGNORECASE)
+                matches = list(keyword_pattern.finditer(content))
                 found_any = False
                 for match in matches:
                     found_any = True
-                    context = KeywordSearcher.extract_context(content, match.start(), match.end())
+                    start_idx = match.start()
+                    end_idx = match.end()
+                    context = KeywordSearcher.extract_context(content, start_idx, end_idx)
                     results.append((int(page_num), keyword, context))
                 if not found_any:
                     print(f"    Keyword '{keyword}' not found on this page.")
