@@ -27,7 +27,7 @@ class LLMAnalyzer:
             input_text += "\n"
 
         # Combine prompt and input text
-        full_prompt = prompt + "\n\n" + "Abstract:\n" + abstract + "\n\n" + input_text
+        full_prompt = prompt + "\n\n" + "\n\n" + input_text
 
         print("\nFull Prompt:")
         print(full_prompt)
@@ -50,12 +50,12 @@ class LLMAnalyzer:
             raise Exception("No response choices found.")
 
         llm_response = response.choices[0].message.content.strip()
-        print("\nPrompt sent to LLM:")
+        print("\nPrompt to be sent to LLM:")
         print(f"\t{full_prompt}")
 
         # Ask user to continue or not
         while True:
-            user_input = input("Continue with this LLM response? (y/n): ").strip().lower()
+            user_input = input("Continue with this? (y/n): ").strip().lower()
             if user_input == 'y':
                 break
             elif user_input == 'n':
@@ -84,12 +84,12 @@ class LLMAnalyzer:
             raise Exception("No response choices found.")
 
         llm_response = response.choices[0].message.content.strip()
-        print("\nPrompt sent to LLM:")
+        print("\nPrompt to be sent to LLM:")
         print(f"\t{prompt_text}")
 
         # Ask user to continue or not
         while True:
-            user_input = input("Continue with this LLM response? (y/n): ").strip().lower()
+            user_input = input("Continue with this? (y/n): ").strip().lower()
             if user_input == 'y':
                 break
             elif user_input == 'n':

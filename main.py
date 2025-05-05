@@ -54,7 +54,7 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
 
     print(f"Reading PDF file: {file_path}")
     pdf_text = read_pdf(file_path)
-    print("PDF text extraction completed.")
+    print("\n\n\n-------------> PDF text extraction completed!!\n\n")
 
     # Load enabler keywords from JSON file
     print(f"Loading keywords from: {keywords_path}")
@@ -118,7 +118,7 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
             print("\nFinal Analysis:")
             print(analysis)
     else:
-        print("None of enablers have been found in the files.")
+        print("None relevant occurences have been found in the file under analysis.")
 
 
 if __name__ == "__main__":

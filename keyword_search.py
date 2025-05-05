@@ -7,15 +7,18 @@ class KeywordSearcher:
 
     @staticmethod
     def extract_context(content, start, end):
-        # Extract the full paragraph containing the occurrence
-        # Split content into paragraphs by double newlines or single newlines
-        paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
-        for paragraph in paragraphs:
-            para_start = content.find(paragraph)
-            para_end = para_start + len(paragraph)
-            if para_start <= start <= para_end:
-                return paragraph
-        # Fallback: return the original snippet if no paragraph found
+        # Extract the full sentence containing the occurrence
+        # Split content into sentences using punctuation marks as delimiters
+        sentence_endings = re.compile(r'(?<=[.!?])\s+')
+        sentences = sentence_endings.split(content)
+        current_pos = 0
+        for sentence in sentences:
+            sentence_start = current_pos
+            sentence_end = sentence_start + len(sentence)
+            if sentence_start <= start <= sentence_end:
+                return sentence.strip()
+            current_pos = sentence_end + 1  # +1 for the space after punctuation
+        # Fallback: return the original snippet if no sentence found
         return content[start:end].strip()
 
     @staticmethod
