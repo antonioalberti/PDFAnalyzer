@@ -86,7 +86,7 @@ def print_occurrences(enabler_occurrences):
         print()
     return total_matches_summary
 
-def main(file_path, keywords_path, min_representative_matches=100, model_name="gpt-4.1-mini-2025-04-14"):
+def main(file_path, keywords_path, min_representative_matches=100, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=True):
     load_dotenv()  # Load environment variables from .env
     openai.api_key = os.getenv("ROUTER_API_KEY")
 
@@ -124,10 +124,15 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
                 unique_occurrences.append(occ)
         for idx, (page_num, keyword, paragraph, absolute_start_idx) in enumerate(unique_occurrences, start=1):
             print(Fore.MAGENTA + f"\n\n-----> Occurrence {idx}: Keyword '{keyword}' on page {page_num}" + Style.RESET_ALL)
-            # Calcular contexto estendido usando o texto completo do PDF e índice absoluto
+            # Calculate extended context using full PDF text and absolute index
             extended_context = extract_extended_context(pdf_text, absolute_start_idx, absolute_start_idx + len(keyword))
             prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}\nKeyword: {keyword}\nContext:\n{extended_context}"
             try:
+                if prompt_approval:
+                    user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
+                    if user_input != 'y':
+                        print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
+                        continue
                 llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, model_name)
                 print(Fore.GREEN + f"    LLM response: {llm_response}" + Style.RESET_ALL)
             except Exception as e:
