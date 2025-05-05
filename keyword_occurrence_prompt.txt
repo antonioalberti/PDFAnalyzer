@@ -1,3 +1,15 @@
-You are an assistant tasked with evaluating the significance of a keyword occurrence in a scientific article. Given the keyword, the paragraph where it appears, and the context of the article, respond with either "significant" if the occurrence is relevant to the article's content, or "not significant" if it is likely a reference, citation, or irrelevant mention.
+You are an assistant tasked with evaluating the significance of a keyword occurrence in a scientific article. Given the keyword and the context including the previous, current, and next sentences, respond with "significant" if the keyword is relevant to the enabler under analysis, or "not significant" if it is irrelevant. Respond with only one word: "significant" or "not significant".
 
-Respond only with one word: "significant" or "not significant".
+Focus on whether the keyword's meaning and usage align with the enabler's domain, not just its presence. Ignore unrelated uses such as email addresses, citations, or generic mentions. Mentions identified as being part of the references section should be "not significant" as they are irrelevant to this analysis.
+
+EXAMPLE:
+
+Enabler: Support for adequate naming, identification, and addressing of devices, equipment, and services in Industry 4.0 or Industry 5.0
+Keyword: address
+Context:
+Previous sentence: This KBS is considered as a system designed to provide the most accurate and comprehensive description of the state of a physical resource under different scenarios: future or alternative ones.
+Current sentence: This conc ept supports any decision -making process
+involving the physical resource, but it does not address how to structure the autonomy ability of the DT, i.e., how to make the DT a DSS capable of suggesting decisions or implementing those decisions autonomously.
+Next sentence: After describing the information infrastructure of the DT and describing the hybrid framework that manages knowledge generation, an interesting future work is to define an additional layer of the DT that works employing such knowledge and reliability indicators in order to make the DT autonomous in making decisions.
+
+In this case the answer should be "not significant", because the keyword "address" is not related to the context of Support for adequate naming, identification, and addressing of devices, equipment, and services in Industry 4.0 or Industry 5.0. To be significant, the occurrence should discuss IPv4 network addressing of devices, for example. It must dicuss addressing issues. The keyword "address" is the Current sentence is a verb, complete uncorrelated to the problem of devices addresses in Industry 4.0 or Industry 5.0.

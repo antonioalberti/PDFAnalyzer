@@ -1,5 +1,5 @@
 {
-  "Naming, identification, and addressing": [
+  "Support for adequate naming, identification, and addressing of devices, equipment, and services in Industry 4.0 or Industry 5.0": [
     "transparency",
     "address",
     "Network Address Translation",
@@ -19,7 +19,7 @@
     "name resolution",
     "source of information"
   ],
-  "Identifier and location splitting": [
+  "Support for identifier and location splitting (ID/Loc) in entities of Industry 4.0 or Industry 5.0": [
     "identifier/locator",
     "dual semantics",
     "ID",
@@ -33,7 +33,7 @@
     "identity loss",
     "location-independent"
   ],
-  "Support for heterogeneous networks and adaptive network": [
+  "Support for heterogeneous and adaptive networking in Industry 4.0 or Industry 5.0": [
     "conectivity",
     "protocol stack",
     "adaptability",
@@ -55,7 +55,7 @@
     "heterogeneous stacks",
     "network adaptability"
   ],
-  "Device or asset representation via digital twins": [
+  "Suppport for device or physical asset representation using digital twins in Industry 4.0 or Industry 5.0": [
     "digital representation",
     "proxy service",
     "physical devices",
@@ -75,7 +75,7 @@
     "asset simulation",
     "asset modeling"
   ],
-  "Flexibility, programmability, and self-organization": [
+  "Suppport for flexibility, programmability, and self-organization in Industry 4.0 or Industry 5.0 architectures": [
     "Network Functions Virtualization",
     "VNFs",
     "Virtual Network Function",
@@ -118,7 +118,7 @@
     "SLA",
     "Service Level Agreement"
   ],
-  "Security, privacy, provenance, traceability and trust": [
+  "Support for security, privacy, provenance, traceability, and trust in Industry 4.0 or Industry 5.0": [
     "Name-based security",
     "formation of trust networks",
     "self-verifying names",
@@ -146,7 +146,7 @@
     "trust network",
     "provenance"
   ],
-  "Immutability": [
+  "Support for immutability of data and program integrity in Industry 4.0 or Industry 5.0 by using distributed ledger technologies": [
     "immutability",
     "blockchain",
     "smart contract",
@@ -166,13 +166,5 @@
     "infrastructure market",
     "resource sharing",
     "virtual function market"
-  ],
-  "Evolving Quantum technologies": [
-    "quantum",
-    "quantum computing",
-    "quantum communication",
-    "quantum encryption",
-    "quantum internet",
-    "post-quantum"
   ]
 }

@@ -25,32 +25,29 @@ class KeywordSearcher:
     def find_occurrences_without_references(text, keywords):
         results = []
         pages = text.split("Page ")
-        print(f"Total pages found: {len(pages)-1}")
+        #print(f"Total pages found: {len(pages)-1}")
+        current_pos = 0
         for page in pages[1:]:
             if ":\n" not in page:
                 print(f"Separator not found on page: {page[:100]}...")
                 continue
 
             page_num, content = page.split(":\n", 1)
-            print(f"\n --> Processing page number: {page_num}")
-            references_start = re.search("REFERENCES", content, re.IGNORECASE)
-            if references_start:
-                print("  References section found, truncating content.")
-                content = content[:references_start.start()]
+            #print(f"\n --> Processing page number: {page_num}")
+            #print(f"  Content length: {len(content)} characters")
             for keyword in keywords:
-                print(f"  Searching for keyword: '{keyword}'")
+                #print(f"  Searching for keyword: '{keyword}'")
                 # Use regex with word boundaries for exact whole word match, case-insensitive
                 keyword_pattern = re.compile(rf"\b{re.escape(keyword)}\b", re.IGNORECASE)
                 matches = list(keyword_pattern.finditer(content))
-                found_any = False
                 for match in matches:
-                    found_any = True
+                    # Extract the context around the match
                     start_idx = match.start()
                     end_idx = match.end()
                     context = KeywordSearcher.extract_context(content, start_idx, end_idx)
-                    results.append((int(page_num), keyword, context))
-                if not found_any:
-                    print(f"    Keyword '{keyword}' not found on this page.")
+                    absolute_start_idx = current_pos + start_idx
+                    results.append((int(page_num), keyword, context, absolute_start_idx))
+            current_pos += len("Page ") + len(page)
         return results
 
     def check_enabler_occurrences(self, pdf_text):

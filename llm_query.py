@@ -1,10 +1,14 @@
 import os
 import openai
+from colorama import init, Fore, Style
+
+init(autoreset=True)
 
 class LLMAnalyzer:
     def __init__(self, api_key=None):
         self.api_key = api_key or os.getenv("ROUTER_API_KEY")
         if not self.api_key:
+            print(Fore.RED + "Error: ROUTER_API_KEY not found in environment variables.")
             raise ValueError("ROUTER_API_KEY not found in environment variables.")
         self.client = openai.OpenAI(
             api_key=self.api_key,
@@ -19,24 +23,33 @@ class LLMAnalyzer:
 
     def analyze(self, classified_keywords, prompt, abstract, model_name="gpt-4.1-mini-2025-04-14"):
         # Prepare the input text for the model
-        input_text = "Keyword Counts:\n"
+        input_text = Fore.CYAN + "Keyword Counts:\n" + Style.RESET_ALL
         for enabler, keyword_counter in classified_keywords.items():
-            input_text += f"{enabler}:\n"
+            input_text += Fore.YELLOW + f"{enabler}:\n" + Style.RESET_ALL
             for keyword, count in keyword_counter.items():
-                input_text += f"Keyword: {keyword}, Count: {count}\n"
+                input_text += Fore.GREEN + f"Keyword: {keyword}, Count: {count}\n" + Style.RESET_ALL
             input_text += "\n"
 
         # Combine prompt and input text
         full_prompt = prompt + "\n\n" + "\n\n" + input_text
 
-        print("\nFull Prompt:")
-        print(full_prompt)
+        print(Fore.BLUE + "\nFull Prompt:")
+        print(Style.RESET_ALL + full_prompt)
+
+        # Ask user to continue or not before calling LLM
+        while True:
+            user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
+            if user_input == 'y':
+                break
+            elif user_input == 'n':
+                print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
+                return None
+            else:
+                print(Fore.YELLOW + "Please enter 'y' or 'n'." + Style.RESET_ALL)
 
         # Call the chat completion endpoint
         system_message = (
-            "You are an expert assistant specialized in analyzing scientific articles. "
-            "Provide precise, objective, and context-aware responses based on the input. "
-            "Focus on understanding the content and relevance of keywords and the text provided."
+            "You are an expert assistant specialized in analyzing scientific articles."
         )
         response = self.client.chat.completions.create(
             model=model_name,
@@ -47,30 +60,32 @@ class LLMAnalyzer:
         )
 
         if not response.choices:
+            print(Fore.RED + "Error: No response choices found." + Style.RESET_ALL)
             raise Exception("No response choices found.")
 
         llm_response = response.choices[0].message.content.strip()
-        print("\nPrompt to be sent to LLM:")
-        print(f"\t{full_prompt}")
-
-        # Ask user to continue or not
-        while True:
-            user_input = input("Continue with this? (y/n): ").strip().lower()
-            if user_input == 'y':
-                break
-            elif user_input == 'n':
-                print("Occurrence discarded by user.")
-                return None
-            else:
-                print("Please enter 'y' or 'n'.")
+        print(Fore.GREEN + "\nLLM response:")
+        print(Style.RESET_ALL + f"\t{llm_response}")
 
         return llm_response
 
     def analyze_single_occurrence(self, prompt_text, model_name="gpt-4.1-mini-2025-04-14"):
+        print(Fore.BLUE + "\nPrompt to be sent to LLM:")
+        print(Style.RESET_ALL + f"\t{prompt_text}")
+
+        # Ask user to continue or not before calling LLM
+        while True:
+            user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
+            if user_input == 'y':
+                break
+            elif user_input == 'n':
+                print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
+                return None
+            else:
+                print(Fore.YELLOW + "Please enter 'y' or 'n'." + Style.RESET_ALL)
+
         system_message = (
-            "You are an expert assistant specialized in analyzing scientific articles. "
-            "Provide precise, objective, and context-aware responses based on the input. "
-            "Focus on understanding the content and relevance of keywords and the text provided."
+            "You are an expert assistant specialized in analyzing scientific articles."
         )
         response = self.client.chat.completions.create(
             model=model_name,
@@ -81,21 +96,8 @@ class LLMAnalyzer:
         )
 
         if not response.choices:
+            print(Fore.RED + "Error: No response choices found." + Style.RESET_ALL)
             raise Exception("No response choices found.")
 
         llm_response = response.choices[0].message.content.strip()
-        print("\nPrompt to be sent to LLM:")
-        print(f"\t{prompt_text}")
-
-        # Ask user to continue or not
-        while True:
-            user_input = input("Continue with this? (y/n): ").strip().lower()
-            if user_input == 'y':
-                break
-            elif user_input == 'n':
-                print("Occurrence discarded by user.")
-                return None
-            else:
-                print("Please enter 'y' or 'n'.")
-
         return llm_response
