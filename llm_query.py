@@ -21,7 +21,7 @@ class LLMAnalyzer:
         with open(prompt_path, 'r', encoding='utf-8') as f:
             return f.read()
 
-    def analyze(self, classified_keywords, prompt, abstract, model_name="gpt-4.1-mini-2025-04-14"):
+    def analyze(self, classified_keywords, prompt, abstract, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=True):
         # Prepare the input text for the model
         input_text = Fore.CYAN + "Keyword Counts:\n" + Style.RESET_ALL
         for enabler, keyword_counter in classified_keywords.items():
@@ -36,16 +36,17 @@ class LLMAnalyzer:
         print(Fore.BLUE + "\nFull Prompt:")
         print(Style.RESET_ALL + full_prompt)
 
-        # Ask user to continue or not before calling LLM
-        while True:
-            user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
-            if user_input == 'y':
-                break
-            elif user_input == 'n':
-                print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
-                return None
-            else:
-                print(Fore.YELLOW + "Please enter 'y' or 'n'." + Style.RESET_ALL)
+        if prompt_approval:
+            # Ask user to continue or not before calling LLM
+            while True:
+                user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
+                if user_input == 'y':
+                    break
+                elif user_input == 'n':
+                    print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
+                    return None
+                else:
+                    print(Fore.YELLOW + "Please enter 'y' or 'n'." + Style.RESET_ALL)
 
         # Call the chat completion endpoint
         system_message = (
@@ -69,20 +70,21 @@ class LLMAnalyzer:
 
         return llm_response
 
-    def analyze_single_occurrence(self, prompt_text, model_name="gpt-4.1-mini-2025-04-14"):
+    def analyze_single_occurrence(self, prompt_text, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=True):
         #print(Fore.BLUE + "\nPrompt to be sent to LLM:")
         #print(Style.RESET_ALL + f"\t{prompt_text}")
 
-        # Ask user to continue or not before calling LLM
-        while True:
-            user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
-            if user_input == 'y':
-                break
-            elif user_input == 'n':
-                print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
-                return None
-            else:
-                print(Fore.YELLOW + "Please enter 'y' or 'n'." + Style.RESET_ALL)
+        if prompt_approval:
+            # Ask user to continue or not before calling LLM
+            while True:
+                user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
+                if user_input == 'y':
+                    break
+                elif user_input == 'n':
+                    print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
+                    return None
+                else:
+                    print(Fore.YELLOW + "Please enter 'y' or 'n'." + Style.RESET_ALL)
 
         system_message = (
             "You are an expert assistant specialized in analyzing scientific articles."

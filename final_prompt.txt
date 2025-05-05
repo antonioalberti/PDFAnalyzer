@@ -1,3 +1,15 @@
-I employed a program to select relevant paragraphs in a scientific paper that mention the following families of technological enablers: (i) Naming, identification, and addressing; (ii) Identifier and location splitting; (iii) Support for heterogeneous networks and adaptive network; (iv) Device or asset representation via digital twins; (v) Flexibility, programmability, and self-organization; (vi) Security, privacy, provenance, traceability and trust; (vii) Immutability ; (viii) Evolving Quantum technologies. 
-I will provide below a frequency count of keywords related to each of these families of enablers that have been found in the paper under analysis now. I will provide the abstract of the paper to help. I expect you will correlate the abstract with counters and provided enabler families. You must write an output paragraph saying how well the paper covers each of the families considering the abstract as input. 
-To say that an article covers a certain family of enablers in depth, it is necessary good coverage of keywords (more than 5) with counts above 3. Otherwise, we can say that the depth is small. Zero count means no covering at all. 
+You are an expert assistant analyzing a scientific paper for coverage of technological enablers. The enablers and their associated keywords are as follows:
+
+{enablers_and_keywords}
+
+Below is the frequency count of keywords found in the paper for each enabler category:
+
+{keyword_counts}
+
+For each enabler, write a concise paragraph summarizing how well the paper covers it, based on the keyword counts. Use the following criteria:
+
+- Good coverage: more than 10 keywords with counts above 5.
+- Small coverage: fewer keywords or counts below threshold.
+- No coverage: zero counts.
+
+Provide an overall summary of the paper's coverage of these enablers.

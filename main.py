@@ -87,6 +87,7 @@ def print_occurrences(enabler_occurrences):
     return total_matches_summary
 
 def main(file_path, keywords_path, min_representative_matches=100, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=True):
+    import os
     load_dotenv()  # Load environment variables from .env
     openai.api_key = os.getenv("ROUTER_API_KEY")
 
@@ -133,7 +134,7 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
                     if user_input != 'y':
                         print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
                         continue
-                llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, model_name)
+                llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, model_name, prompt_approval=prompt_approval)
                 print(Fore.GREEN + f"    LLM response: {llm_response}" + Style.RESET_ALL)
             except Exception as e:
                 print(Fore.RED + f"Warning: LLM call failed for keyword occurrence filtering: {e}" + Style.RESET_ALL)
@@ -158,10 +159,43 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
         if total_matches_summary < min_representative_matches:
             print(Fore.RED + "Small number of total matches... Unrepresentative source" + Style.RESET_ALL)
         else:
-            prompt = llm_analyzer.load_prompt("final_prompt.txt")
-            analysis = llm_analyzer.analyze(classified_keywords, prompt, model_name)
+            # Prepare enablers and keywords string
+            enablers_and_keywords_str = ""
+            for enabler, keywords in enabler_keywords.items():
+                enablers_and_keywords_str += f"{enabler}:\n"
+                enablers_and_keywords_str += ", ".join(keywords) + "\n\n"
+
+            # Prepare keyword counts string
+            keyword_counts_str = ""
+            for enabler, keyword_counter in classified_keywords.items():
+                keyword_counts_str += f"{enabler}:\n"
+                for keyword, count in keyword_counter.items():
+                    keyword_counts_str += f"  {keyword}: {count}\n"
+                keyword_counts_str += "\n"
+
+            # Load final prompt template
+            prompt_template = llm_analyzer.load_prompt("final_prompt.txt")
+
+            # Replace placeholders
+            final_prompt = prompt_template.replace("{enablers_and_keywords}", enablers_and_keywords_str)
+            final_prompt = final_prompt.replace("{keyword_counts}", keyword_counts_str)
+
+            # Call LLM analyze with final prompt
+            analysis = llm_analyzer.analyze({}, final_prompt, None, model_name)
             print(Fore.BLUE + "\nFinal Analysis:" + Style.RESET_ALL)
             print(analysis)
+
+            # Save final prompt and analysis result to files
+            import os
+            base_name = os.path.splitext(os.path.basename(file_path))[0]
+            prompt_file = f"{base_name}_final_prompt_used.txt"
+            result_file = f"{base_name}_final_result.txt"
+
+            with open(prompt_file, 'w', encoding='utf-8') as pf:
+                pf.write(final_prompt)
+
+            with open(result_file, 'w', encoding='utf-8') as rf:
+                rf.write(analysis)
     else:
         print(Fore.RED + "None relevant occurences have been found in the file under analysis." + Style.RESET_ALL)
 
@@ -171,5 +205,7 @@ if __name__ == "__main__":
     parser.add_argument("file_path", help="The path to the PDF file to analyze")
     parser.add_argument("keywords_path", help="The path to the JSON file with enabler keywords")
     parser.add_argument("--model", default="gpt-4.1-mini-2025-04-14", help="The LLM model to use for analysis")
+    parser.add_argument("--prompt-approval", type=lambda x: (str(x).lower() == 'true'), default=True, help="Enable or disable prompt approval before sending to LLM (true/false)")
+    parser.add_argument("--min-representative-matches", type=int, default=100, help="Minimum total matches to consider source representative")
     args = parser.parse_args()
-    main(args.file_path, args.keywords_path, model_name=args.model)
+    main(args.file_path, args.keywords_path, min_representative_matches=args.min_representative_matches, model_name=args.model, prompt_approval=args.prompt_approval)

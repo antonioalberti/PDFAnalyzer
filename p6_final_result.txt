@@ -1,0 +1,15 @@
+Support for adequate naming, identification, and addressing of devices, equipment, and services in Industry 4.0 or Industry 5.0: The paper shows no coverage of this enabler, as no related keywords were identified.
+
+Support for identifier and location splitting (ID/Loc) in entities of Industry 4.0 or Industry 5.0: There is no coverage of this enabler in the paper, given the absence of any relevant keyword mentions.
+
+Support for heterogeneous and adaptive networking in Industry 4.0 or Industry 5.0: The paper offers small coverage of this enabler, indicated only by the keyword "flexibility" appearing 6 times. Other keywords associated with this enabler are not present.
+
+Support for device or physical asset representation using digital twins in Industry 4.0 or Industry 5.0: This enabler is well covered in the paper, with "digital twin" mentioned 13 times and "digital twins" mentioned 10 times, clearly surpassing the threshold for good coverage.
+
+Support for flexibility, programmability, and self-organization in Industry 4.0 or Industry 5.0 architectures: The paper demonstrates small coverage of this area, with "flexibility" appearing 6 times, along with "middleware" (4) and "microservices" (2). Although multiple keywords appear, only "flexibility" meets the count threshold, indicating limited but present focus.
+
+Support for security, privacy, provenance, traceability, and trust in Industry 4.0 or Industry 5.0: There is small coverage here, as keywords such as "cybersecurity" (2), "authentication" (1), and "authorization" (1) appear but with low frequency and limited variety.
+
+Support for immutability of data and program integrity in Industry 4.0 or Industry 5.0 by using distributed ledger technologies: The paper exhibits very minimal coverage, with only one mention of "decentralized" and no other relevant keywords found.
+
+Overall Summary: The paper primarily focuses on the digital twin enabler, providing good coverage in this area. Other enablers receive limited attention, mainly in flexibility-related aspects and security components, but most remain unaddressed or minimally discussed. There is no coverage of naming and addressing or identifier/location splitting enablers. The paper offers a focused exploration of digital twins with some peripheral coverage of flexibility and security, but lacks comprehensive treatment of other key technological enablers in Industry 4.0 or Industry 5.0.
