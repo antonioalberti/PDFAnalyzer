@@ -27,9 +27,14 @@
     "flexibility",
     "heterogeneity",
     "heterogeneous",
-    "interoperability"
+    "interoperability",
+    "network",
+    "networking",
+    "infrastructure",
+    "self-organizing network",
+    "SON"
   ],
-  "Suppport for device or physical asset representation using digital twins in Industry 4.0 or Industry 5.0": [
+  "Support for device or physical asset representation using digital twins in Industry 4.0 or Industry 5.0": [
     "digital representation",
     "proxy service",
     "physical devices",
@@ -40,7 +45,7 @@
     "gateway services",
     "device mirroring"
   ],
-  "Suppport for flexibility, programmability, and self-organization in Industry 4.0 or Industry 5.0 architectures": [
+  "Support for flexibility, programmability, and self-organization in Industry 4.0 or Industry 5.0 architectures": [
     "Network Functions Virtualization",
     "VNFs",
     "Virtual Network Function",
