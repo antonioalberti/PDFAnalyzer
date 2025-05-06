@@ -112,6 +112,7 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
 
     # Filter occurrences by consulting LLM for each occurrence
     filtered_enabler_occurrences = {enabler: [] for enabler in enabler_occurrences.keys()}
+    significant_paragraphs = []
 
     for enabler, occurrences in enabler_occurrences.items():
         print(Fore.YELLOW + f"\n\n--------> Processing occurrences for enabler category: {enabler} ({len(occurrences)} occurrences)" + Style.RESET_ALL)
@@ -141,6 +142,7 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
                 continue
             if llm_response is not None and llm_response.lower() == "significant":
                 filtered_enabler_occurrences[enabler].append((page_num, keyword, paragraph))
+                significant_paragraphs.append(paragraph)
 
     total_matches_summary = print_occurrences(filtered_enabler_occurrences)
 
@@ -180,10 +182,13 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
             final_prompt = prompt_template.replace("{enablers_and_keywords}", enablers_and_keywords_str)
             final_prompt = final_prompt.replace("{keyword_counts}", keyword_counts_str)
 
-            # Call LLM analyze with final prompt
-            analysis = llm_analyzer.analyze({}, final_prompt, None, model_name)
-            print(Fore.BLUE + "\nFinal Analysis:" + Style.RESET_ALL)
-            print(analysis)
+            # Prepare significant paragraphs string for prompt replacement
+            significant_paragraphs_str = "\n\n".join(significant_paragraphs)
+            # Ensure the placeholder is replaced correctly by using format method
+            final_prompt_with_paragraphs = final_prompt.replace("{significant_paragraphs}", significant_paragraphs_str)
+
+            # Call LLM analyze with final prompt including significant paragraphs
+            analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, model_name)
 
             # Save final prompt and analysis result to files
             import os
@@ -193,10 +198,16 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
             result_file = os.path.join(base_dir, f"{base_name}_final_result.txt")
 
             with open(prompt_file, 'w', encoding='utf-8') as pf:
-                pf.write(final_prompt)
+                pf.write(final_prompt_with_paragraphs)
 
             with open(result_file, 'w', encoding='utf-8') as rf:
                 rf.write(analysis)
+
+            # Save significant paragraphs to a file
+            significant_file = os.path.join(base_dir, f"{base_name}_significant_paragraphs.txt")
+            with open(significant_file, 'w', encoding='utf-8') as sf:
+                # Group paragraphs efficiently by separating with two newlines
+                sf.write("\n\n".join(significant_paragraphs))
     else:
         print(Fore.RED + "None relevant occurences have been found in the file under analysis." + Style.RESET_ALL)
 

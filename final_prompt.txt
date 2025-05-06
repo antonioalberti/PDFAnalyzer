@@ -6,10 +6,12 @@ Below is the frequency count of keywords found in the paper for each enabler cat
 
 {keyword_counts}
 
-For each enabler, write a concise paragraph summarizing how well the paper covers it, based on the keyword counts. Use the following criteria:
+Additionally, here are significant paragraphs extracted from the paper that highlight relevant content:
+
+{significant_paragraphs}
+
+Write a no more than three concise paragraphs summarizing how well the paper covers all the enablers, based on the keyword counts and the significant paragraphs. Use the following criteria:
 
 - Good coverage: more than 10 keywords with counts above 5.
 - Small coverage: fewer keywords or counts below threshold.
 - No coverage: zero counts.
-
-Provide an overall summary of the paper's coverage of these enablers.

@@ -21,32 +21,9 @@ class LLMAnalyzer:
         with open(prompt_path, 'r', encoding='utf-8') as f:
             return f.read()
 
-    def analyze(self, classified_keywords, prompt, abstract, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=True):
-        # Prepare the input text for the model
-        input_text = Fore.CYAN + "Keyword Counts:\n" + Style.RESET_ALL
-        for enabler, keyword_counter in classified_keywords.items():
-            input_text += Fore.YELLOW + f"{enabler}:\n" + Style.RESET_ALL
-            for keyword, count in keyword_counter.items():
-                input_text += Fore.GREEN + f"Keyword: {keyword}, Count: {count}\n" + Style.RESET_ALL
-            input_text += "\n"
-
-        # Combine prompt and input text
-        full_prompt = prompt + "\n\n" + "\n\n" + input_text
-
-        print(Fore.BLUE + "\nFull Prompt:")
-        print(Style.RESET_ALL + full_prompt)
-
-        if prompt_approval:
-            # Ask user to continue or not before calling LLM
-            while True:
-                user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
-                if user_input == 'y':
-                    break
-                elif user_input == 'n':
-                    print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
-                    return None
-                else:
-                    print(Fore.YELLOW + "Please enter 'y' or 'n'." + Style.RESET_ALL)
+    def analyze(self, classified_keywords, prompt, abstract=None, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=False):
+        # Use the prompt as is, since keyword counts are already included
+        full_prompt = prompt
 
         # Call the chat completion endpoint
         system_message = (

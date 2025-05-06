@@ -22,9 +22,11 @@ if "%SOURCE_FOLDER:~-1%"=="\" (
 set MAX_FILES=%~2
 set MIN_REPRESENTATIVE_MATCHES=%~3
 set KEYWORDS_PATH=6G.json
+set MODEL=openai/gpt-4.1-mini-2025-04-14
+set PROMPT_APPROVAL=false
 
 for /l %%i in (0,1,%MAX_FILES%) do (
     echo Processing file p%%i.pdf
-    python main.py "%SOURCE_FOLDER%\p%%i.pdf" %KEYWORDS_PATH% %MIN_REPRESENTATIVE_MATCHES% > "%SOURCE_FOLDER%\p%%i.txt"
+    python main.py "%SOURCE_FOLDER%\p%%i.pdf" %KEYWORDS_PATH% --min-representative-matches %MIN_REPRESENTATIVE_MATCHES% --model %MODEL% --prompt-approval %PROMPT_APPROVAL% > "%SOURCE_FOLDER%\p%%i.txt"
 )
 echo All files processed.

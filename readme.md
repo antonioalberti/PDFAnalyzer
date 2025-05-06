@@ -20,10 +20,9 @@ This project is a tool to analyze PDF documents for mentions of specific technol
 ## What the script does
 
 - The `main.py` script reads each PDF, extracts the text from each page, and searches for keywords related to different categories of technological enablers.
-- It extracts the abstract section from the first pages of the PDF for contextual analysis.
 - For each occurrence found, the script prints the page, the keyword, and a snippet of context from the text.
 - The script classifies and counts keyword occurrences by enabler category.
-- If the total matches exceed the minimum representative threshold, it uses an AI language model (via the OpenAI API on requesty.ai) to generate an advanced analysis based on the keywords and abstract.
+- If the total matches exceed the minimum representative threshold, it uses an AI language model (via the OpenAI API on requesty.ai) to generate an advanced analysis based on the keywords and significant paragraphs extracted from the paper.
 - The results are saved in `.txt` files corresponding to each analyzed PDF.
 
 ## Requirements
