@@ -188,8 +188,9 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
             # Save final prompt and analysis result to files
             import os
             base_name = os.path.splitext(os.path.basename(file_path))[0]
-            prompt_file = f"{base_name}_final_prompt_used.txt"
-            result_file = f"{base_name}_final_result.txt"
+            base_dir = os.path.dirname(file_path)
+            prompt_file = os.path.join(base_dir, f"{base_name}_final_prompt_used.txt")
+            result_file = os.path.join(base_dir, f"{base_name}_final_result.txt")
 
             with open(prompt_file, 'w', encoding='utf-8') as pf:
                 pf.write(final_prompt)
