@@ -9,11 +9,11 @@ This project is a tool to analyze PDF documents for mentions of specific technol
 3. Run the `install.ps1` PowerShell script to set up a Python virtual environment and install dependencies.
 4. Run the `run.bat` file in the Windows command prompt (CMD) with the following arguments:
    ```
-   run.bat [source_folder] [max_files] [min_representative_matches]
+   run.bat [source_folder] [start_index] [end_index] [min_representative_matches]
    ```
    For example:
    ```
-   run.bat C:\Users\alberti\Documents\Artigos 42 100
+   run.bat C:\Users\alberti\Documents\Artigos 0 42 100
    ```
    This will process PDF files from `p0.pdf` to `p42.pdf` in the specified folder, generating text files with the analysis results for each PDF.
 
