@@ -12,7 +12,7 @@
         "public ledger"
     ],
     "Allocate and remove batches dynamically": [
-        "llocation",
+        "allocation",
         "batch",
         "dynamic removal",
         "resource management",
@@ -37,6 +37,7 @@
         "rule configuration",
         "rules",
         "agreement",
+        "batch",
         "contract"
     ],
     "Add monitored properties dynamically": [
