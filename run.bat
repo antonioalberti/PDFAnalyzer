@@ -39,10 +39,10 @@ if not "%~6"=="" set MODEL=%~6
 if not "%~7"=="" set PROMPT_APPROVAL=%~7
 if not "%~8"=="" set MIN_REPRESENTATIVE_MATCHES=%~8
 
-set EXTRA_ARGS=--min-representative-matches %MIN_REPRESENTATIVE_MATCHES% --model %MODEL% --prompt-approval %PROMPT_APPROVAL% --keywords-path %KEYWORDS_PATH%
+set EXTRA_ARGS=--min-representative-matches %MIN_REPRESENTATIVE_MATCHES% --model %MODEL% --prompt-approval %PROMPT_APPROVAL%
 
 for /l %%i in (%START_INDEX%,1,%END_INDEX%) do (
     echo Processing file p%%i.pdf
-    python main.py "%SOURCE_FOLDER%\p%%i.pdf" %EXTRA_ARGS% > "%SOURCE_FOLDER%\p%%i.txt"
+    python main.py "%SOURCE_FOLDER%\p%%i.pdf" %KEYWORDS_PATH% %EXTRA_ARGS% > "%SOURCE_FOLDER%\p%%i.txt"
 )
 echo All files processed.

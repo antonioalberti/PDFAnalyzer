@@ -1,0 +1,22 @@
+Processing file p1.pdf
+Processing file p2.pdf
+Processing file p3.pdf
+Processing file p4.pdf
+Processing file p5.pdf
+Processing file p6.pdf
+Processing file p7.pdf
+Processing file p8.pdf
+Processing file p9.pdf
+Processing file p10.pdf
+Processing file p11.pdf
+Processing file p12.pdf
+Processing file p13.pdf
+Processing file p14.pdf
+Processing file p15.pdf
+Processing file p16.pdf
+Processing file p17.pdf
+Processing file p18.pdf
+Processing file p19.pdf
+Processing file p20.pdf
+Processing file p21.pdf
+Deseja finalizar o arquivo em lotes (S/N)? 
