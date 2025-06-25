@@ -40,13 +40,7 @@ if not "%~7"=="" set PROMPT_APPROVAL=%~7
 
 set EXTRA_ARGS=--min-representative-matches %MIN_REPRESENTATIVE_MATCHES% --model %MODEL% --prompt-approval %PROMPT_APPROVAL%
 
-if "%START_INDEX%"=="0" if "%END_INDEX%"=="0" (
-    echo Processing file P00.pdf
-    python main.py "%SOURCE_FOLDER%\P00.pdf" %KEYWORDS_PATH% %EXTRA_ARGS% > "%SOURCE_FOLDER%\P00.txt"
-) else (
-    for /l %%i in (%START_INDEX%,1,%END_INDEX%) do (
-        echo Processing file p%%i.pdf
-        python main.py "%SOURCE_FOLDER%\p%%i.pdf" %KEYWORDS_PATH% %EXTRA_ARGS% > "%SOURCE_FOLDER%\p%%i.txt"
-    )
-)
-echo All files processed.
+rem Call the main python script with the source folder, index range, and other parameters
+echo "Executing: python main.py \"%SOURCE_FOLDER%\" %START_INDEX% %END_INDEX% %KEYWORDS_PATH% %EXTRA_ARGS%"
+python main.py "%SOURCE_FOLDER%" %START_INDEX% %END_INDEX% %KEYWORDS_PATH% %EXTRA_ARGS%
+echo All selected files processed by main.py.
