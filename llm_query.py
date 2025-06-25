@@ -48,8 +48,8 @@ class LLMAnalyzer:
         return llm_response
 
     def analyze_single_occurrence(self, prompt_text, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=True):
-        print(Fore.BLUE + "\nPrompt to be sent to LLM:")
-        print(Style.RESET_ALL + f"\t{prompt_text}")
+        #print(Fore.BLUE + "\nPrompt to be sent to LLM:")
+        #print(Style.RESET_ALL + f"\t{prompt_text}")
 
         if prompt_approval:
             # Ask user to continue or not before calling LLM

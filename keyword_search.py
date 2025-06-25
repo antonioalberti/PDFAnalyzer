@@ -32,7 +32,15 @@ class KeywordSearcher:
                 print(f"Separator not found on page: {page[:100]}...")
                 continue
 
-            page_num, content = page.split(":\n", 1)
+            page_num_str, content = page.split(":\n", 1)
+            # Extract only the digits from the beginning of the page_num_str
+            page_num_match = re.match(r'\d+', page_num_str.strip())
+            if not page_num_match:
+                print(f"Warning: Could not extract page number from '{page_num_str.strip()}'")
+                continue # Skip this occurrence if page number cannot be determined
+
+            page_num = int(page_num_match.group(0))
+
             #print(f"\n --> Processing page number: {page_num}")
             #print(f"  Content length: {len(content)} characters")
             for keyword in keywords:
@@ -46,7 +54,7 @@ class KeywordSearcher:
                     end_idx = match.end()
                     context = KeywordSearcher.extract_context(content, start_idx, end_idx)
                     absolute_start_idx = current_pos + start_idx
-                    results.append((int(page_num), keyword, context, absolute_start_idx))
+                    results.append((page_num, keyword, context, absolute_start_idx)) # Use the extracted integer page_num
             current_pos += len("Page ") + len(page)
         return results
 
