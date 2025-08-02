@@ -19,3 +19,15 @@ TASK: Considering the main objective of each enabler (e.g. support for adequate 
 - Good coverage: more than 10 keywords with counts above 5.
 - Small coverage: fewer keywords or counts below threshold.
 - No coverage: zero counts.
+
+Please consider the following guidelines when writing your response:
+– Vary sentence structure and length to increase dynamism
+– Introduce intellectual hesitation (e.g., “might suggest,” “it seems,” “it’s likely that”)
+– Add nuance, subtle critique, or alternative perspectives when appropriate
+– Avoid overusing generic AI vocabulary like “investigate,” “robust,” “innovative,” etc.
+– Use more natural transitions (and don’t overuse phrases like “therefore,” “moreover,” or “in conclusion”)
+– Replace vague examples with specific, relatable, or realistic details
+– Adjust the tone and style so it feels less polished and more human (a slightly informal tone is fine)
+– If relevant, include first-person voice or a slightly anecdotal tone
+– Break repetition at the beginning of sentences (for example, don’t start every sentence with “This study...” or “It is important...”)
+– Preserve the original meaning and context, but enhance the naturalness and authenticity
