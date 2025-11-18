@@ -35,6 +35,19 @@ def iter_pdf_files(folder: str, recursive: bool) -> List[str]:
     return pdf_paths
 
 
+def deduplicate_by_basename(paths: List[str]) -> List[str]:
+    """Keep only the first occurrence of each filename (case-insensitive)."""
+    seen: set[str] = set()
+    unique_paths: List[str] = []
+    for path in paths:
+        name = os.path.basename(path).lower()
+        if name in seen:
+            continue
+        seen.add(name)
+        unique_paths.append(path)
+    return unique_paths
+
+
 def analyze_pdf(
     file_path: str,
     searcher: KeywordSearcher,
@@ -136,7 +149,13 @@ def main() -> None:
         print("No PDF files found to analyze.")
         sys.exit(0)
 
-    print(f"Found {len(pdf_files)} PDF files. Starting analysis...")
+    unique_pdf_files = deduplicate_by_basename(pdf_files)
+    if len(unique_pdf_files) != len(pdf_files):
+        skipped = len(pdf_files) - len(unique_pdf_files)
+        print(f"Skipped {skipped} duplicate filename(s).")
+    pdf_files = unique_pdf_files
+
+    print(f"Found {len(pdf_files)} unique PDF files. Starting analysis...")
 
     searcher = KeywordSearcher(enabler_keywords)
     per_file_counts: Dict[str, Dict[str, int]] = {}
