@@ -35,15 +35,15 @@ def extract_extended_context(text, keyword, keyword_start):
     current_sentence = sentences[sentence_index]
     next_sentence = sentences[sentence_index + 1] if sentence_index < len(sentences) - 1 else ""
 
-    # concatenate with clear separators
-    extended_context = ""
+    # Format context concisely
+    context_parts = []
     if prev_sentence:
-        extended_context += f"Previous sentence: {prev_sentence.strip()}\n"
-    extended_context += f"Current sentence: {current_sentence.strip()}\n"
+        context_parts.append(prev_sentence.strip())
+    context_parts.append(f"[{keyword}]" + current_sentence.replace(keyword, f"[{keyword}]", 1))
     if next_sentence:
-        extended_context += f"Next sentence: {next_sentence.strip()}\n"
-
-    return extended_context
+        context_parts.append(next_sentence.strip())
+    
+    return " | ".join(context_parts)
 
 def read_pdf(file_path):
     """
@@ -116,9 +116,6 @@ def main():
         print(Fore.RED + f"Error: The file '{args.pdf_file}' is not a PDF file." + Style.RESET_ALL)
         sys.exit(1)
     
-    print(Fore.CYAN + f"Reading PDF file: {args.pdf_file}" + Style.RESET_ALL)
-    print(Fore.CYAN + f"Searching for keyword: {args.keyword}" + Style.RESET_ALL)
-    
     try:
         # Extract text from PDF
         pdf_text = read_pdf(args.pdf_file)
@@ -128,17 +125,16 @@ def main():
         
         # Display results
         if contexts:
-            print(Fore.GREEN + f"\nFound {len(contexts)} occurrence(s) of '{args.keyword}':\n" + Style.RESET_ALL)
+            print(Fore.GREEN + f"Found {len(contexts)} occurrence(s) of '{args.keyword}':" + Style.RESET_ALL)
             
-            for i, (page_num, context) in enumerate(contexts, 1):
-                print(Fore.YELLOW + f"--- Occurrence {i} (Page {page_num}) ---" + Style.RESET_ALL)
+            for page_num, context in contexts:
+                print(Fore.YELLOW + f"Page {page_num}:" + Style.RESET_ALL)
                 print(Fore.WHITE + context + Style.RESET_ALL)
-                print()
         else:
-            print(Fore.RED + f"\nNo occurrences of '{args.keyword}' found in the PDF file." + Style.RESET_ALL)
+            print(Fore.RED + f"No occurrences of '{args.keyword}' found." + Style.RESET_ALL)
     
     except Exception as e:
-        print(Fore.RED + f"Error processing PDF file: {str(e)}" + Style.RESET_ALL)
+        print(Fore.RED + f"Error: {str(e)}" + Style.RESET_ALL)
         sys.exit(1)
 
 if __name__ == "__main__":
