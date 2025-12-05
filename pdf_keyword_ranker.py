@@ -119,10 +119,12 @@ def parse_args() -> argparse.Namespace:
         help="Number of top files to display per category (default: 10).",
     )
     parser.add_argument(
-        "--recursive",
-        action="store_true",
-        help="Recursively scan subdirectories for PDF files.",
+        "--no-recursive",
+        dest="recursive",
+        action="store_false",
+        help="Do not recursively scan subdirectories (recursive is enabled by default).",
     )
+    parser.set_defaults(recursive=True)
     parser.add_argument(
         "--output",
         help="Optional path to save rankings as JSON.",
