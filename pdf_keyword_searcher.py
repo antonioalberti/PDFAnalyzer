@@ -20,9 +20,15 @@ def find_keyword_contexts(file_path, keyword):
             if text:
                 # A more robust way to split sentences
                 sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|!)\s', text.replace('\n', ' '))
-                for sentence in sentences:
+                for i, sentence in enumerate(sentences):
                     if re.search(re.escape(keyword), sentence, re.IGNORECASE):
-                        contexts.append((page_num, sentence.strip()))
+                        context = ""
+                        if i > 0:
+                            context += sentences[i-1].strip() + " "
+                        context += sentence.strip()
+                        if i < len(sentences) - 1:
+                            context += " " + sentences[i+1].strip()
+                        contexts.append((page_num, context))
     return contexts
 
 def normalize_text(text):
