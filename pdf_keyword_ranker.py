@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import sys
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from PyPDF2 import PdfReader
 
@@ -51,37 +51,58 @@ def deduplicate_by_basename(paths: List[str]) -> List[str]:
 def analyze_pdf(
     file_path: str,
     searcher: KeywordSearcher,
-) -> Dict[str, int]:
-    """Return a dict with counts of keyword occurrences per category for one PDF."""
+) -> Dict[str, Dict[str, Any]]:
+    """Return a dict with counts/breakdown of occurrences per category for one PDF."""
     pdf_text = extract_pdf_text(file_path)
     occurrences = searcher.check_enabler_occurrences(pdf_text)
-    return {category: len(matches) for category, matches in occurrences.items()}
+
+    result = {}
+    for category, matches in occurrences.items():
+        # Count occurrences of each specific keyword
+        breakdown: Dict[str, int] = {}
+        for match in matches:
+            # match is (page_num, keyword, context, absolute_start_idx)
+            kw = match[1]
+            breakdown[kw] = breakdown.get(kw, 0) + 1
+        
+        result[category] = {
+            "total": len(matches),
+            "breakdown": breakdown
+        }
+    return result
 
 
 def build_rankings(
-    per_file_counts: Dict[str, Dict[str, int]],
+    per_file_counts: Dict[str, Dict[str, Any]],
     categories: List[str],
     top_n: int,
-) -> Dict[str, List[Tuple[str, int]]]:
-    rankings: Dict[str, List[Tuple[str, int]]] = {}
+) -> Dict[str, List[Tuple[str, int, Dict[str, int]]]]:
+    rankings: Dict[str, List[Tuple[str, int, Dict[str, int]]]] = {}
     for category in categories:
-        sortable: List[Tuple[str, int]] = []
-        for file_path, counts in per_file_counts.items():
-            sortable.append((file_path, counts.get(category, 0)))
-        # Sort descending by score, then alphabetically by filename to stabilize ordering
+        sortable: List[Tuple[str, int, Dict[str, int]]] = []
+        for file_path, data in per_file_counts.items():
+            cat_data = data.get(category, {"total": 0, "breakdown": {}})
+            sortable.append((file_path, cat_data["total"], cat_data["breakdown"]))
+        
+        # Sort descending by score, then alphabetically by filename
         sortable.sort(key=lambda item: (-item[1], os.path.basename(item[0]).lower()))
+        
         # Filter out zero-score entries while keeping at most top_n
-        filtered = [(file_path, score) for file_path, score in sortable if score > 0][:top_n]
+        filtered = [
+            (file_path, score, breakdown)
+            for file_path, score, breakdown in sortable 
+            if score > 0
+        ][:top_n]
         rankings[category] = filtered
     return rankings
 
 
-def save_rankings(rankings: Dict[str, List[Tuple[str, int]]], output_path: str) -> None:
+def save_rankings(rankings: Dict[str, List[Tuple[str, int, Dict[str, int]]]], output_path: str) -> None:
     """Persist rankings into a JSON file."""
     serializable = {
         category: [
-            {"file": file_path, "score": score}
-            for file_path, score in ranking
+            {"file": file_path, "score": score, "breakdown": breakdown}
+            for file_path, score, breakdown in ranking
         ]
         for category, ranking in rankings.items()
     }
@@ -89,14 +110,17 @@ def save_rankings(rankings: Dict[str, List[Tuple[str, int]]], output_path: str) 
         json.dump(serializable, fh, indent=2, ensure_ascii=False)
 
 
-def print_rankings(rankings: Dict[str, List[Tuple[str, int]]]) -> None:
+def print_rankings(rankings: Dict[str, List[Tuple[str, int, Dict[str, int]]]]) -> None:
     for category, ranking in rankings.items():
         print(f"\n=== Top matches for category: {category} ===")
         if not ranking:
             print("No relevant PDFs found for this category.")
             continue
-        for idx, (file_path, score) in enumerate(ranking, start=1):
-            print(f"{idx:2d}. {os.path.basename(file_path)} -> {score} keyword hits")
+        for idx, (file_path, score, breakdown) in enumerate(ranking, start=1):
+            # Sort breakdown by count descending
+            sorted_breakdown = sorted(breakdown.items(), key=lambda x: x[1], reverse=True)
+            breakdown_str = ", ".join([f"{count} {kw}" for kw, count in sorted_breakdown])
+            print(f"{idx:2d}. {os.path.basename(file_path)} -> {score} keyword hits; {breakdown_str}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -160,7 +184,7 @@ def main() -> None:
     print(f"Found {len(pdf_files)} unique PDF files. Starting analysis...")
 
     searcher = KeywordSearcher(enabler_keywords)
-    per_file_counts: Dict[str, Dict[str, int]] = {}
+    per_file_counts: Dict[str, Dict[str, Any]] = {}
 
     for idx, pdf_file in enumerate(pdf_files, start=1):
         try:
