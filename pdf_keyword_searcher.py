@@ -8,6 +8,106 @@ import pdfplumber
 # Initialize colorama for colored output
 init(autoreset=True)
 
+
+def extract_text_smartly(page):
+    """
+    Extracts text from a page respecting multi-column layouts.
+    Detects regions where text spans across columns (like titles) vs two-column regions.
+    For two-column regions, reads left column then right column.
+    """
+    words = page.extract_words()
+    width = page.width
+    height = page.height
+    center = width / 2
+    epsilon = 10  # Buffer for center crossing detection
+
+    # Identify words that cross the center gutter (spanning words)
+    # A word crosses if it starts before center-buffer and ends after center+buffer
+    spanning_words = [
+        w for w in words 
+        if w['x0'] < center - epsilon and w['x1'] > center + epsilon
+    ]
+
+    # Create Y-intervals covered by spanning words
+    spanning_intervals = []
+    for w in spanning_words:
+        spanning_intervals.append((w['top'], w['bottom']))
+
+    # Merge overlapping vertical intervals
+    spanning_intervals.sort()
+    merged = []
+    if spanning_intervals:
+        curr_start, curr_end = spanning_intervals[0]
+        for start, end in spanning_intervals[1:]:
+            if start <= curr_end + 2:  # 2 points vertical tolerance
+                curr_end = max(curr_end, end)
+            else:
+                merged.append((curr_start, curr_end))
+                curr_start, curr_end = start, end
+        merged.append((curr_start, curr_end))
+
+    # Construct the full sequence of intervals (Spanning vs Column)
+    final_intervals = []
+    curr_y = 0
+    for start, end in merged:
+        # Buffer region before spanning element is a Column region
+        if start > curr_y:
+            final_intervals.append({'type': 'cols', 'top': curr_y, 'bottom': start})
+        # The region covered by spanning element is a Spanning region
+        final_intervals.append({'type': 'span', 'top': start, 'bottom': end})
+        curr_y = end
+    # Remaining region is Column region
+    if curr_y < height:
+        final_intervals.append({'type': 'cols', 'top': curr_y, 'bottom': height})
+
+    full_text = []
+    for interval in final_intervals:
+        if interval['bottom'] - interval['top'] < 1:
+            continue
+        
+        # Define the vertical slice for this interval
+        # Use crop to isolate the region
+        crop_box = (0, interval['top'], width, interval['bottom'])
+        
+        # Safety check for invalid boxes
+        if crop_box[1] >= crop_box[3]:
+            continue
+            
+        try:
+            cropped_page = page.crop(crop_box)
+        except Exception:
+            continue
+
+        if interval['type'] == 'span':
+            # Extract normally
+            text = cropped_page.extract_text(x_tolerance=2, y_tolerance=2)
+            if text:
+                full_text.append(text)
+        else:
+            # Split into Left and Right columns
+            # Left Column
+            left_box = (0, interval['top'], center, interval['bottom'])
+            try:
+                left_crop = page.crop(left_box)
+                t1 = left_crop.extract_text(x_tolerance=2, y_tolerance=2)
+                if t1:
+                    full_text.append(t1)
+            except Exception:
+                pass
+            
+            # Right Column
+            right_box = (center, interval['top'], width, interval['bottom'])
+            try:
+                right_crop = page.crop(right_box)
+                t2 = right_crop.extract_text(x_tolerance=2, y_tolerance=2)
+                if t2:
+                    full_text.append(t2)
+            except Exception:
+                pass
+
+    return "\n".join(full_text)
+
+
 def find_keyword_contexts(file_path, keyword):
     """
     Finds all occurrences of a keyword in a PDF and extracts the sentences where it appears.
@@ -16,7 +116,8 @@ def find_keyword_contexts(file_path, keyword):
     contexts = []
     with pdfplumber.open(file_path) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
-            text = page.extract_text(x_tolerance=2, y_tolerance=2)
+            # Use smart extraction to handle columns
+            text = extract_text_smartly(page)
             if text:
                 # A more robust way to split sentences
                 sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|!)\s', text.replace('\n', ' '))
