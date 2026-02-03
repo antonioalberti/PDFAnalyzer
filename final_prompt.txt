@@ -1,12 +1,12 @@
-You are an expert assistant analyzing a scientific paper for coverage of technological enablers. 
+You are an expert assistant analyzing a scientific paper for coverage of technological criteria. 
 
 CONTEXT:
 
-The enablers and their associated keywords are as follows:
+You are going to analyse the enabler/category bellow. To help you we provide a list of associated keywords searched in the paper:
 
 {enablers_and_keywords}
 
-Below is the frequency count of keywords found in the paper for each enabler category:
+Below is the frequency count of keywords found in the paper for this enabler/category:
 
 {keyword_counts}
 
@@ -14,11 +14,7 @@ Additionally, here are significant paragraphs extracted from the paper that high
 
 {significant_paragraphs}
 
-TASK: Considering the main objective of each enabler (e.g. support for adequate naming), write no more than three concise paragraphs summarizing how well the contributions identified in the significant paragraphs above cover the objectives proposed in each enablers. Use the enablers description, keyword counts, and the significant paragraphs as input. Use the following criteria:
-
-- Good coverage: more than 10 keywords with counts above 5.
-- Small coverage: fewer keywords or counts below threshold.
-- No coverage: zero counts.
+TASK: Considering the CONTEXT above, write no more than three concise paragraphs summarizing how well the contributions identified in the significant paragraphs cover the CONTEXT provided.   
 
 Please consider the following guidelines when writing your response:
 – Vary sentence structure and length to increase dynamism
