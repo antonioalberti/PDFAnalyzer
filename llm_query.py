@@ -12,7 +12,7 @@ class LLMAnalyzer:
             raise ValueError("ROUTER_API_KEY not found in environment variables.")
         self.client = openai.OpenAI(
             api_key=self.api_key,
-            base_url="https://router.requesty.ai/v1",
+            base_url="https://openrouter.ai/api/v1",
             default_headers={"Authorization": f"Bearer {self.api_key}"}
         )
 
