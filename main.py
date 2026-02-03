@@ -161,53 +161,62 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
         if total_matches_summary < min_representative_matches:
             print(Fore.RED + "Small number of total matches... Unrepresentative source" + Style.RESET_ALL)
         else:
-            # Prepare enablers and keywords string
-            enablers_and_keywords_str = ""
-            for enabler, keywords in enabler_keywords.items():
-                enablers_and_keywords_str += f"{enabler}:\n"
-                enablers_and_keywords_str += ", ".join(keywords) + "\n\n"
+            # Process each category separately
+            for enabler in filtered_enabler_occurrences.keys():
+                if filtered_enabler_occurrences[enabler]:  # Only process categories with significant matches
+                    print(Fore.CYAN + f"\n\n-------------> Processing category: {enabler}" + Style.RESET_ALL)
+                    
+                    # Prepare enablers and keywords string for this category
+                    enablers_and_keywords_str = f"{enabler}:\n"
+                    enablers_and_keywords_str += ", ".join(enabler_keywords[enabler]) + "\n\n"
 
-            # Prepare keyword counts string
-            keyword_counts_str = ""
-            for enabler, keyword_counter in classified_keywords.items():
-                keyword_counts_str += f"{enabler}:\n"
-                for keyword, count in keyword_counter.items():
-                    keyword_counts_str += f"  {keyword}: {count}\n"
-                keyword_counts_str += "\n"
+                    # Prepare keyword counts string for this category
+                    keyword_counts_str = f"{enabler}:\n"
+                    for keyword, count in classified_keywords[enabler].items():
+                        keyword_counts_str += f"  {keyword}: {count}\n"
+                    keyword_counts_str += "\n"
 
-            # Load final prompt template
-            prompt_template = llm_analyzer.load_prompt("final_prompt.txt")
+                    # Get significant paragraphs only for this category
+                    category_paragraphs = []
+                    for page_num, keyword, paragraph in filtered_enabler_occurrences[enabler]:
+                        category_paragraphs.append(paragraph)
+                    
+                    significant_paragraphs_str = "\n\n".join(category_paragraphs)
 
-            # Replace placeholders
-            final_prompt = prompt_template.replace("{enablers_and_keywords}", enablers_and_keywords_str)
-            final_prompt = final_prompt.replace("{keyword_counts}", keyword_counts_str)
+                    # Load final prompt template
+                    prompt_template = llm_analyzer.load_prompt("final_prompt.txt")
 
-            # Prepare significant paragraphs string for prompt replacement
-            significant_paragraphs_str = "\n\n".join(significant_paragraphs)
-            # Ensure the placeholder is replaced correctly by using format method
-            final_prompt_with_paragraphs = final_prompt.replace("{significant_paragraphs}", significant_paragraphs_str)
+                    # Replace placeholders for this category
+                    final_prompt = prompt_template.replace("{enablers_and_keywords}", enablers_and_keywords_str)
+                    final_prompt = final_prompt.replace("{keyword_counts}", keyword_counts_str)
+                    final_prompt_with_paragraphs = final_prompt.replace("{significant_paragraphs}", significant_paragraphs_str)
 
-            # Call LLM analyze with final prompt including significant paragraphs
-            analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, model_name)
+                    # Call LLM analyze with final prompt including category-specific paragraphs
+                    analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, model_name)
 
-            # Save final prompt and analysis result to files
-            import os
-            base_name = os.path.splitext(os.path.basename(file_path))[0]
-            base_dir = os.path.dirname(file_path)
-            prompt_file = os.path.join(base_dir, f"{base_name}_final_prompt_used.txt")
-            result_file = os.path.join(base_dir, f"{base_name}_final_result.txt")
+                    # Save final prompt and analysis result to category-specific files
+                    import os
+                    base_name = os.path.splitext(os.path.basename(file_path))[0]
+                    base_dir = os.path.dirname(file_path)
+                    
+                    # Use category index instead of full name
+                    category_index = list(filtered_enabler_occurrences.keys()).index(enabler) + 1
+                    prompt_file = os.path.join(base_dir, f"{base_name}_final_prompt_used_category_{category_index}.txt")
+                    result_file = os.path.join(base_dir, f"{base_name}_final_result_category_{category_index}.txt")
+                    significant_file = os.path.join(base_dir, f"{base_name}_significant_paragraphs_category_{category_index}.txt")
 
-            with open(prompt_file, 'w', encoding='utf-8') as pf:
-                pf.write(final_prompt_with_paragraphs)
+                    with open(prompt_file, 'w', encoding='utf-8') as pf:
+                        pf.write(final_prompt_with_paragraphs)
 
-            with open(result_file, 'w', encoding='utf-8') as rf:
-                rf.write(analysis)
+                    with open(result_file, 'w', encoding='utf-8') as rf:
+                        rf.write(analysis)
 
-            # Save significant paragraphs to a file
-            significant_file = os.path.join(base_dir, f"{base_name}_significant_paragraphs.txt")
-            with open(significant_file, 'w', encoding='utf-8') as sf:
-                # Group paragraphs efficiently by separating with two newlines
-                sf.write("\n\n".join(significant_paragraphs))
+                    # Save category-specific significant paragraphs to a file
+                    with open(significant_file, 'w', encoding='utf-8') as sf:
+                        # Group paragraphs efficiently by separating with two newlines
+                        sf.write("\n\n".join(category_paragraphs))
+                    
+                    print(Fore.GREEN + f"Category {enabler} analysis completed and files saved." + Style.RESET_ALL)
     else:
         print(Fore.RED + "None relevant occurences have been found in the file under analysis." + Style.RESET_ALL)
 
@@ -288,53 +297,62 @@ def process_single_pdf(file_path, keywords_path, min_representative_matches=100,
         if total_matches_summary < min_representative_matches:
             print(Fore.RED + "Small number of total matches... Unrepresentative source" + Style.RESET_ALL)
         else:
-            # Prepare enablers and keywords string
-            enablers_and_keywords_str = ""
-            for enabler, keywords in enabler_keywords.items():
-                enablers_and_keywords_str += f"{enabler}:\n"
-                enablers_and_keywords_str += ", ".join(keywords) + "\n\n"
+            # Process each category separately
+            for enabler in filtered_enabler_occurrences.keys():
+                if filtered_enabler_occurrences[enabler]:  # Only process categories with significant matches
+                    print(Fore.CYAN + f"\n\n-------------> Processing category: {enabler}" + Style.RESET_ALL)
+                    
+                    # Prepare enablers and keywords string for this category
+                    enablers_and_keywords_str = f"{enabler}:\n"
+                    enablers_and_keywords_str += ", ".join(enabler_keywords[enabler]) + "\n\n"
 
-            # Prepare keyword counts string
-            keyword_counts_str = ""
-            for enabler, keyword_counter in classified_keywords.items():
-                keyword_counts_str += f"{enabler}:\n"
-                for keyword, count in keyword_counter.items():
-                    keyword_counts_str += f"  {keyword}: {count}\n"
-                keyword_counts_str += "\n"
+                    # Prepare keyword counts string for this category
+                    keyword_counts_str = f"{enabler}:\n"
+                    for keyword, count in classified_keywords[enabler].items():
+                        keyword_counts_str += f"  {keyword}: {count}\n"
+                    keyword_counts_str += "\n"
 
-            # Load final prompt template
-            prompt_template = llm_analyzer.load_prompt("final_prompt.txt")
+                    # Get significant paragraphs only for this category
+                    category_paragraphs = []
+                    for page_num, keyword, paragraph in filtered_enabler_occurrences[enabler]:
+                        category_paragraphs.append(paragraph)
+                    
+                    significant_paragraphs_str = "\n\n".join(category_paragraphs)
 
-            # Replace placeholders
-            final_prompt = prompt_template.replace("{enablers_and_keywords}", enablers_and_keywords_str)
-            final_prompt = final_prompt.replace("{keyword_counts}", keyword_counts_str)
+                    # Load final prompt template
+                    prompt_template = llm_analyzer.load_prompt("final_prompt.txt")
 
-            # Prepare significant paragraphs string for prompt replacement
-            significant_paragraphs_str = "\n\n".join(significant_paragraphs)
-            # Ensure the placeholder is replaced correctly by using format method
-            final_prompt_with_paragraphs = final_prompt.replace("{significant_paragraphs}", significant_paragraphs_str)
+                    # Replace placeholders for this category
+                    final_prompt = prompt_template.replace("{enablers_and_keywords}", enablers_and_keywords_str)
+                    final_prompt = final_prompt.replace("{keyword_counts}", keyword_counts_str)
+                    final_prompt_with_paragraphs = final_prompt.replace("{significant_paragraphs}", significant_paragraphs_str)
 
-            # Call LLM analyze with final prompt including significant paragraphs
-            analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, model_name)
+                    # Call LLM analyze with final prompt including category-specific paragraphs
+                    analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, model_name)
 
-            # Save final prompt and analysis result to files
-            import os
-            base_name = os.path.splitext(os.path.basename(file_path))[0]
-            base_dir = os.path.dirname(file_path)
-            prompt_file = os.path.join(base_dir, f"{base_name}_final_prompt_used.txt")
-            result_file = os.path.join(base_dir, f"{base_name}_final_result.txt")
+                    # Save final prompt and analysis result to category-specific files
+                    import os
+                    base_name = os.path.splitext(os.path.basename(file_path))[0]
+                    base_dir = os.path.dirname(file_path)
+                    
+                    # Use category index instead of full name
+                    category_index = list(filtered_enabler_occurrences.keys()).index(enabler) + 1
+                    prompt_file = os.path.join(base_dir, f"{base_name}_final_prompt_used_category_{category_index}.txt")
+                    result_file = os.path.join(base_dir, f"{base_name}_final_result_category_{category_index}.txt")
+                    significant_file = os.path.join(base_dir, f"{base_name}_significant_paragraphs_category_{category_index}.txt")
 
-            with open(prompt_file, 'w', encoding='utf-8') as pf:
-                pf.write(final_prompt_with_paragraphs)
+                    with open(prompt_file, 'w', encoding='utf-8') as pf:
+                        pf.write(final_prompt_with_paragraphs)
 
-            with open(result_file, 'w', encoding='utf-8') as rf:
-                rf.write(analysis)
+                    with open(result_file, 'w', encoding='utf-8') as rf:
+                        rf.write(analysis)
 
-            # Save significant paragraphs to a file
-            significant_file = os.path.join(base_dir, f"{base_name}_significant_paragraphs.txt")
-            with open(significant_file, 'w', encoding='utf-8') as sf:
-                # Group paragraphs efficiently by separating with two newlines
-                sf.write("\n\n".join(significant_paragraphs))
+                    # Save category-specific significant paragraphs to a file
+                    with open(significant_file, 'w', encoding='utf-8') as sf:
+                        # Group paragraphs efficiently by separating with two newlines
+                        sf.write("\n\n".join(category_paragraphs))
+                    
+                    print(Fore.GREEN + f"Category {enabler} analysis completed and files saved." + Style.RESET_ALL)
     else:
         print(Fore.RED + "None relevant occurences have been found in the file under analysis." + Style.RESET_ALL)
 
