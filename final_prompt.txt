@@ -16,6 +16,8 @@ Additionally, here are significant paragraphs extracted from the paper that high
 
 TASK: Considering the CONTEXT above, write no more than three concise paragraphs summarizing how well the contributions identified in the significant paragraphs cover the CONTEXT provided.   
 
+Considering all above, give a note for this paper between 0-10. Put the note after the paragraphs.
+
 Please consider the following guidelines when writing your response:
 – Vary sentence structure and length to increase dynamism
 – Introduce intellectual hesitation (e.g., “might suggest,” “it seems,” “it’s likely that”)

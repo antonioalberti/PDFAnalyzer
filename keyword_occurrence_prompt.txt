@@ -1,15 +1,17 @@
-You are an assistant tasked with evaluating the significance of a Keyword occurrence in a scientific article. Given the Keyword and the Context including the previous, current, and next sentences, respond with "significant" if the keyword is relevant to the enabler under analysis, or "not significant" if it is irrelevant. Respond with only one word: "significant" or "not significant".
+You are an assistant tasked with evaluating the significance of a Keyword occurrence in a scientific article. Given the Keyword and the Context , respond with "significant" if the keyword is relevant to the enabler under analysis, or "not significant" if it is irrelevant. Respond with only one word: "significant" or "not significant".
 
-Focus on whether the keyword's meaning and usage align with the Enabler's domain, not just its simple presence. In other words, the Keyword must be used in a context that supports the Enabler. Ignore unrelated uses such as email addresses, citations, or generic mentions. Mentions identified as being part of the references section should be "not significant" as they are irrelevant to this analysis.
+Focus on whether the keyword's meaning and usage align with the Enabler's/Category's domain, not just its simple presence. In other words, the Keyword must be used in a context that supports the Enabler/Category. Ignore unrelated uses such as email addresses, citations, or generic mentions. Mentions identified as being part of the references section should be "not significant" as they are irrelevant to this analysis. 
+
+Instead of technological enablers, the categories may also be analysing adherence to a particular theme, such as originality, significance or rigour.
 
 EXAMPLE:
 
 Enabler: Support for adequate naming, identification, and addressing of devices, equipment, and services in Industry 4.0 or Industry 5.0
 Keyword: address
+
 Context:
-Previous sentence: This KBS is considered as a system designed to provide the most accurate and comprehensive description of the state of a physical resource under different scenarios: future or alternative ones.
-Current sentence: This conc ept supports any decision -making process
-involving the physical resource, but it does not address how to structure the autonomy ability of the DT, i.e., how to make the DT a DSS capable of suggesting decisions or implementing those decisions autonomously.
-Next sentence: After describing the information infrastructure of the DT and describing the hybrid framework that manages knowledge generation, an interesting future work is to define an additional layer of the DT that works employing such knowledge and reliability indicators in order to make the DT autonomous in making decisions.
+This concept supports any decision-making process involving the physical resource, but it does not address how to structure the autonomy ability of the DT, i.e., how to make the DT a DSS capable of suggesting decisions or implementing those decisions autonomously.
+
+HOW TO PROCEED
 
 In this case the answer should be "not significant", because the keyword "address" is not related to the context of Support for adequate naming, identification, and addressing of devices, equipment, and services in Industry 4.0 or Industry 5.0. To be significant, the occurrence should discuss IPv4 network addressing of devices, for example. It must discuss networking device addresses issues. The keyword "address" is the Current sentence is a verb, complete uncorrelated to the problem of devices addresses.
