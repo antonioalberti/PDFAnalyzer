@@ -21,13 +21,30 @@ This project is a tool to analyze PDF documents for mentions of specific technol
 3. Run the `install.ps1` PowerShell script to set up a Python virtual environment and install dependencies.
 4. Run the `run.bat` file in the Windows command prompt (CMD) with the following arguments:
    ```
-   run.bat [source_folder] [start_index] [end_index] [min_representative_matches]
+   run.bat [source_folder] [start_index] [end_index] [min_representative_matches] [keywords_path] [model] [prompt_approval]
    ```
+   
+   Required parameters:
+   - `source_folder`: Path to the folder containing PDF files
+   - `start_index`: Starting index (0-based) of PDF files to process
+   - `end_index`: Ending index (0-based) of PDF files to process (inclusive)
+   - `min_representative_matches`: Minimum keyword matches to consider source representative
+   
+   Optional parameters:
+   - `keywords_path`: Path to JSON file with keywords (default: 6G.json)
+   - `model`: LLM model to use (default: gpt-4.1-mini-2025-04-14)
+   - `prompt_approval`: Enable/disable prompt approval (true/false, default: false)
+   
    For example:
    ```
    run.bat C:\Users\alberti\Documents\Artigos 0 42 100
    ```
    This will process PDF files from `p0.pdf` to `p42.pdf` in the specified folder, generating text files with the analysis results for each PDF.
+   
+   Another example with custom parameters:
+   ```
+   run.bat C:\Users\alberti\Documents\Artigos 0 42 100 REF.json gpt-4.1-mini-2025-04-14 false
+   ```
 
 ## What the script does
 

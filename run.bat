@@ -28,7 +28,7 @@ set START_INDEX=%~2
 set END_INDEX=%~3
 set MIN_REPRESENTATIVE_MATCHES=%~4
 set KEYWORDS_PATH=6G.json
-set MODEL=openai/gpt-4.1-mini-2025-04-14
+set MODEL=gpt-4.1-mini-2025-04-14
 set PROMPT_APPROVAL=false
 
 rem Accept additional optional parameters for model, prompt approval, and min representative matches
