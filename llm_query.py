@@ -1,5 +1,5 @@
 import os
-import openai
+from openai import OpenAI
 from colorama import init, Fore, Style
 
 init(autoreset=True)
@@ -10,7 +10,7 @@ class LLMAnalyzer:
         if not self.api_key:
             print(Fore.RED + "Error: ROUTER_API_KEY not found in environment variables.")
             raise ValueError("ROUTER_API_KEY not found in environment variables.")
-        self.client = openai.OpenAI(
+        self.client = OpenAI(
             api_key=self.api_key,
             base_url="https://openrouter.ai/api/v1",
             default_headers={"Authorization": f"Bearer {self.api_key}"}

@@ -59,7 +59,7 @@ def read_pdf(file_path):
         print(Fore.CYAN + f"Extracted text from page {page_num}:" + Style.RESET_ALL)
         if page_text:
             snippet = page_text[:10000].replace('\n', ' ')
-            print(Fore.GREEN + f"  {snippet}..." + Style.RESET_ALL)
+            #print(Fore.GREEN + f"  {snippet}..." + Style.RESET_ALL)
             text += f"Page {page_num}:\n"
             text += page_text + "\n"
         else:
