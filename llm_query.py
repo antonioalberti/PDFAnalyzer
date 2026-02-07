@@ -21,7 +21,7 @@ class LLMAnalyzer:
         with open(prompt_path, 'r', encoding='utf-8') as f:
             return f.read()
 
-    def analyze(self, classified_keywords, prompt, abstract=None, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=False):
+    def analyze(self, classified_keywords, prompt, abstract=None, model_name="gpt-4.1-mini-2025-04-14"):
         # Use the prompt as is, since keyword counts are already included
         full_prompt = prompt
 
@@ -47,22 +47,8 @@ class LLMAnalyzer:
 
         return llm_response
 
-    def analyze_single_occurrence(self, prompt_text, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=True):
-        #print(Fore.BLUE + "\nPrompt to be sent to LLM:")
-        #print(Style.RESET_ALL + f"\t{prompt_text}")
-
-        if prompt_approval:
-            # Ask user to continue or not before calling LLM
-            while True:
-                user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
-                if user_input == 'y':
-                    break
-                elif user_input == 'n':
-                    print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
-                    return None
-                else:
-                    print(Fore.YELLOW + "Please enter 'y' or 'n'." + Style.RESET_ALL)
-
+    def analyze_single_occurrence(self, prompt_text, model_name="gpt-4.1-mini-2025-04-14"):
+        # Send prompt to LLM automatically without user approval
         system_message = (
             "You are an expert assistant specialized in analyzing scientific articles."
         )

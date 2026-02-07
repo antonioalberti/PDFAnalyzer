@@ -86,7 +86,7 @@ def print_occurrences(enabler_occurrences):
         print()
     return total_matches_summary
 
-def main(file_path, keywords_path, min_representative_matches=100, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=True):
+def main(file_path, keywords_path, min_representative_matches=100, model_name="gpt-4.1-mini-2025-04-14"):
     import os
     load_dotenv()  # Load environment variables from .env
     openai.api_key = os.getenv("ROUTER_API_KEY")
@@ -130,12 +130,7 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
             extended_context = extract_extended_context(pdf_text, absolute_start_idx, absolute_start_idx + len(keyword))
             prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}\nKeyword: {keyword}\nContext:\n{extended_context}"
             try:
-                if prompt_approval:
-                    user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
-                    if user_input != 'y':
-                        print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
-                        continue
-                llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, model_name, prompt_approval=prompt_approval)
+                llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, model_name)
                 print(Fore.GREEN + f"    LLM response: {llm_response}" + Style.RESET_ALL)
             except Exception as e:
                 print(Fore.RED + f"Warning: LLM call failed for keyword occurrence filtering: {e}" + Style.RESET_ALL)
@@ -221,7 +216,7 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
         print(Fore.RED + "None relevant occurences have been found in the file under analysis." + Style.RESET_ALL)
 
 
-def process_single_pdf(file_path, keywords_path, min_representative_matches=100, model_name="gpt-4.1-mini-2025-04-14", prompt_approval=True):
+def process_single_pdf(file_path, keywords_path, min_representative_matches=100, model_name="gpt-4.1-mini-2025-04-14"):
     """Processes a single PDF file."""
     import os # Add import os here
     load_dotenv()  # Load environment variables from .env
@@ -266,12 +261,7 @@ def process_single_pdf(file_path, keywords_path, min_representative_matches=100,
             extended_context = extract_extended_context(pdf_text, absolute_start_idx, absolute_start_idx + len(keyword))
             prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}\nKeyword: {keyword}\nContext:\n{extended_context}"
             try:
-                if prompt_approval:
-                    user_input = input(Fore.MAGENTA + "Send this prompt to LLM? (y/n): " + Style.RESET_ALL).strip().lower()
-                    if user_input != 'y':
-                        print(Fore.RED + "Prompt discarded by user." + Style.RESET_ALL)
-                        continue
-                llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, model_name, prompt_approval=prompt_approval)
+                llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, model_name)
                 print(Fore.GREEN + f"    LLM response: {llm_response}" + Style.RESET_ALL)
             except Exception as e:
                 print(Fore.RED + f"Warning: LLM call failed for keyword occurrence filtering: {e}" + Style.RESET_ALL)
@@ -364,7 +354,6 @@ if __name__ == "__main__":
     parser.add_argument("end_index", type=int, help="The ending index (0-based) of the PDF file list to process (inclusive)")
     parser.add_argument("keywords_path", help="The path to the JSON file with enabler keywords")
     parser.add_argument("--model", default="gpt-4.1-mini-2025-04-14", help="The LLM model to use for analysis")
-    parser.add_argument("--prompt-approval", type=lambda x: (str(x).lower() == 'true'), default=True, help="Enable or disable prompt approval before sending to LLM (true/false)")
     parser.add_argument("--min-representative-matches", type=int, default=100, help="Minimum total matches to consider source representative")
     args = parser.parse_args()
 
@@ -390,7 +379,7 @@ if __name__ == "__main__":
     for filename in files_to_process:
         file_path = os.path.join(args.source_folder, filename)
         print(Fore.BLUE + f"\n\n-------------> Starting processing for file: {filename}" + Style.RESET_ALL)
-        process_single_pdf(file_path, args.keywords_path, min_representative_matches=args.min_representative_matches, model_name=args.model, prompt_approval=args.prompt_approval)
+        process_single_pdf(file_path, args.keywords_path, min_representative_matches=args.min_representative_matches, model_name=args.model)
         print(Fore.BLUE + f"\n-------------> Finished processing for file: {filename}\n\n" + Style.RESET_ALL)
 
     print(Fore.GREEN + "All selected files processed." + Style.RESET_ALL)
