@@ -86,7 +86,8 @@ def print_occurrences(enabler_occurrences):
         print()
     return total_matches_summary
 
-def main(file_path, keywords_path, min_representative_matches=100, model_name="random"):
+def main(file_path, keywords_path, min_representative_matches=100, model_name="random", debug=False):
+    """Main function for analyzing a PDF file."""
     # Convert "random" to None for random model selection
     effective_model = None if model_name == "random" else model_name
     import os
@@ -130,8 +131,14 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="r
             print(Fore.MAGENTA + f"\n\n-----> Occurrence {idx}: Keyword '{keyword}' on page {page_num}" + Style.RESET_ALL)
             # Calculate extended context using full PDF text and absolute index
             extended_context = extract_extended_context(pdf_text, absolute_start_idx, absolute_start_idx + len(keyword))
-            prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}\nKeyword: {keyword}\nContext:\n{extended_context}"
+            prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler/Category: {enabler}\nKeyword being analyzed: {keyword}\nContext in the PDF:\n{extended_context}"
             try:
+                if debug:
+                    print(Fore.YELLOW + "\n    [DEBUG] Complete prompt being sent to LLM:" + Style.RESET_ALL)
+                    print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
+                    print(Fore.WHITE + prompt_text + Style.RESET_ALL)
+                    print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
+                
                 llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, effective_model)
                 print(Fore.GREEN + f"    LLM response: {llm_response}" + Style.RESET_ALL)
             except Exception as e:
@@ -189,6 +196,12 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="r
                     final_prompt_with_paragraphs = final_prompt.replace("{significant_paragraphs}", significant_paragraphs_str)
 
                     # Call LLM analyze with final prompt including category-specific paragraphs
+                    if debug:
+                        print(Fore.YELLOW + "\n    [DEBUG] Complete final prompt being sent to LLM:" + Style.RESET_ALL)
+                        print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
+                        print(Fore.WHITE + final_prompt_with_paragraphs + Style.RESET_ALL)
+                        print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
+                    
                     analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, effective_model)
 
                     # Save final prompt and analysis result to category-specific files
@@ -218,10 +231,10 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="r
         print(Fore.RED + "None relevant occurences have been found in the file under analysis." + Style.RESET_ALL)
 
 
-def process_single_pdf(file_path, keywords_path, min_representative_matches=100, model_name="random"):
+def process_single_pdf(file_path, keywords_path, min_representative_matches=100, model_name="random", debug=False):
+    """Processes a single PDF file."""
     # Convert "random" to None for random model selection
     effective_model = None if model_name == "random" else model_name
-    """Processes a single PDF file."""
     import os # Add import os here
     load_dotenv()  # Load environment variables from .env
     openai.api_key = os.getenv("ROUTER_API_KEY")
@@ -265,6 +278,12 @@ def process_single_pdf(file_path, keywords_path, min_representative_matches=100,
             extended_context = extract_extended_context(pdf_text, absolute_start_idx, absolute_start_idx + len(keyword))
             prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}\nKeyword: {keyword}\nContext:\n{extended_context}"
             try:
+                if debug:
+                    print(Fore.YELLOW + "\n    [DEBUG] Complete prompt being sent to LLM:" + Style.RESET_ALL)
+                    print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
+                    print(Fore.WHITE + prompt_text + Style.RESET_ALL)
+                    print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
+                
                 llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, effective_model)
                 print(Fore.GREEN + f"    LLM response: {llm_response}" + Style.RESET_ALL)
             except Exception as e:
@@ -322,6 +341,12 @@ def process_single_pdf(file_path, keywords_path, min_representative_matches=100,
                     final_prompt_with_paragraphs = final_prompt.replace("{significant_paragraphs}", significant_paragraphs_str)
 
                     # Call LLM analyze with final prompt including category-specific paragraphs
+                    if debug:
+                        print(Fore.YELLOW + "\n    [DEBUG] Complete final prompt being sent to LLM:" + Style.RESET_ALL)
+                        print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
+                        print(Fore.WHITE + final_prompt_with_paragraphs + Style.RESET_ALL)
+                        print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
+                    
                     analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, effective_model)
 
                     # Save final prompt and analysis result to category-specific files
@@ -359,6 +384,7 @@ if __name__ == "__main__":
     parser.add_argument("keywords_path", help="The path to the JSON file with enabler keywords")
     parser.add_argument("--model", default="random", help="The LLM model to use for analysis. Use 'random' for random model selection from models.txt, or specify a model like 'openai/gpt-4.1-mini-2025-04-14'")
     parser.add_argument("--min-representative-matches", type=int, default=100, help="Minimum total matches to consider source representative")
+    parser.add_argument("--debug", action="store_true", help="Enable detailed debug output showing full LLM prompts")
     args = parser.parse_args()
 
     # List and sort PDF files
@@ -383,7 +409,7 @@ if __name__ == "__main__":
     for filename in files_to_process:
         file_path = os.path.join(args.source_folder, filename)
         print(Fore.BLUE + f"\n\n-------------> Starting processing for file: {filename}" + Style.RESET_ALL)
-        process_single_pdf(file_path, args.keywords_path, min_representative_matches=args.min_representative_matches, model_name=args.model)
+        process_single_pdf(file_path, args.keywords_path, min_representative_matches=args.min_representative_matches, model_name=args.model, debug=args.debug)
         print(Fore.BLUE + f"\n-------------> Finished processing for file: {filename}\n\n" + Style.RESET_ALL)
 
     print(Fore.GREEN + "All selected files processed." + Style.RESET_ALL)
