@@ -131,12 +131,12 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="r
             print(Fore.MAGENTA + f"\n\n-----> Occurrence {idx}: Keyword '{keyword}' on page {page_num}" + Style.RESET_ALL)
             # Calculate extended context using full PDF text and absolute index
             extended_context = extract_extended_context(pdf_text, absolute_start_idx, absolute_start_idx + len(keyword))
-            prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler/Category: {enabler}\nKeyword being analyzed: {keyword}\nContext in the PDF:\n{extended_context}"
+            prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}\nKeyword: {keyword}\nContext:\n{extended_context}"
             try:
                 if debug:
-                    print(Fore.YELLOW + "\n    [DEBUG] Complete prompt being sent to LLM:" + Style.RESET_ALL)
+                    print(Fore.YELLOW + "\n    [DEBUG] Context being sent to LLM:" + Style.RESET_ALL)
                     print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
-                    print(Fore.WHITE + prompt_text + Style.RESET_ALL)
+                    print(Fore.WHITE + extended_context + Style.RESET_ALL)
                     print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
                 
                 llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, effective_model)
@@ -197,9 +197,9 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="r
 
                     # Call LLM analyze with final prompt including category-specific paragraphs
                     if debug:
-                        print(Fore.YELLOW + "\n    [DEBUG] Complete final prompt being sent to LLM:" + Style.RESET_ALL)
+                        print(Fore.YELLOW + "\n    [DEBUG] Context being sent to LLM:" + Style.RESET_ALL)
                         print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
-                        print(Fore.WHITE + final_prompt_with_paragraphs + Style.RESET_ALL)
+                        print(Fore.WHITE + significant_paragraphs_str[:2000] + Style.RESET_ALL)
                         print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
                     
                     analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, effective_model)
@@ -229,7 +229,6 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="r
                     print(Fore.GREEN + f"Category {enabler} analysis completed and files saved." + Style.RESET_ALL)
     else:
         print(Fore.RED + "None relevant occurences have been found in the file under analysis." + Style.RESET_ALL)
-
 
 def process_single_pdf(file_path, keywords_path, min_representative_matches=100, model_name="random", debug=False):
     """Processes a single PDF file."""
@@ -279,9 +278,9 @@ def process_single_pdf(file_path, keywords_path, min_representative_matches=100,
             prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}\nKeyword: {keyword}\nContext:\n{extended_context}"
             try:
                 if debug:
-                    print(Fore.YELLOW + "\n    [DEBUG] Complete prompt being sent to LLM:" + Style.RESET_ALL)
+                    print(Fore.YELLOW + "\n    [DEBUG] Context being sent to LLM:" + Style.RESET_ALL)
                     print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
-                    print(Fore.WHITE + prompt_text + Style.RESET_ALL)
+                    print(Fore.WHITE + extended_context + Style.RESET_ALL)
                     print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
                 
                 llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, effective_model)
@@ -342,9 +341,9 @@ def process_single_pdf(file_path, keywords_path, min_representative_matches=100,
 
                     # Call LLM analyze with final prompt including category-specific paragraphs
                     if debug:
-                        print(Fore.YELLOW + "\n    [DEBUG] Complete final prompt being sent to LLM:" + Style.RESET_ALL)
+                        print(Fore.YELLOW + "\n    [DEBUG] Context being sent to LLM:" + Style.RESET_ALL)
                         print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
-                        print(Fore.WHITE + final_prompt_with_paragraphs + Style.RESET_ALL)
+                        print(Fore.WHITE + significant_paragraphs_str[:2000] + Style.RESET_ALL)
                         print(Fore.WHITE + "=" * 80 + Style.RESET_ALL)
                     
                     analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, effective_model)

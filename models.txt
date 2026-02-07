@@ -4,4 +4,4 @@
 
 google/gemini-3-flash-preview
 openai/gpt-5-mini
-moonshotai/kimi-k2.5
+x-ai/grok-4-fast
