@@ -86,7 +86,9 @@ def print_occurrences(enabler_occurrences):
         print()
     return total_matches_summary
 
-def main(file_path, keywords_path, min_representative_matches=100, model_name="gpt-4.1-mini-2025-04-14"):
+def main(file_path, keywords_path, min_representative_matches=100, model_name="random"):
+    # Convert "random" to None for random model selection
+    effective_model = None if model_name == "random" else model_name
     import os
     load_dotenv()  # Load environment variables from .env
     openai.api_key = os.getenv("ROUTER_API_KEY")
@@ -130,7 +132,7 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
             extended_context = extract_extended_context(pdf_text, absolute_start_idx, absolute_start_idx + len(keyword))
             prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}\nKeyword: {keyword}\nContext:\n{extended_context}"
             try:
-                llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, model_name)
+                llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, effective_model)
                 print(Fore.GREEN + f"    LLM response: {llm_response}" + Style.RESET_ALL)
             except Exception as e:
                 print(Fore.RED + f"Warning: LLM call failed for keyword occurrence filtering: {e}" + Style.RESET_ALL)
@@ -187,7 +189,7 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
                     final_prompt_with_paragraphs = final_prompt.replace("{significant_paragraphs}", significant_paragraphs_str)
 
                     # Call LLM analyze with final prompt including category-specific paragraphs
-                    analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, model_name)
+                    analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, effective_model)
 
                     # Save final prompt and analysis result to category-specific files
                     import os
@@ -216,7 +218,9 @@ def main(file_path, keywords_path, min_representative_matches=100, model_name="g
         print(Fore.RED + "None relevant occurences have been found in the file under analysis." + Style.RESET_ALL)
 
 
-def process_single_pdf(file_path, keywords_path, min_representative_matches=100, model_name="gpt-4.1-mini-2025-04-14"):
+def process_single_pdf(file_path, keywords_path, min_representative_matches=100, model_name="random"):
+    # Convert "random" to None for random model selection
+    effective_model = None if model_name == "random" else model_name
     """Processes a single PDF file."""
     import os # Add import os here
     load_dotenv()  # Load environment variables from .env
@@ -261,7 +265,7 @@ def process_single_pdf(file_path, keywords_path, min_representative_matches=100,
             extended_context = extract_extended_context(pdf_text, absolute_start_idx, absolute_start_idx + len(keyword))
             prompt_text = f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}\nKeyword: {keyword}\nContext:\n{extended_context}"
             try:
-                llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, model_name)
+                llm_response = llm_analyzer.analyze_single_occurrence(prompt_text, effective_model)
                 print(Fore.GREEN + f"    LLM response: {llm_response}" + Style.RESET_ALL)
             except Exception as e:
                 print(Fore.RED + f"Warning: LLM call failed for keyword occurrence filtering: {e}" + Style.RESET_ALL)
@@ -318,7 +322,7 @@ def process_single_pdf(file_path, keywords_path, min_representative_matches=100,
                     final_prompt_with_paragraphs = final_prompt.replace("{significant_paragraphs}", significant_paragraphs_str)
 
                     # Call LLM analyze with final prompt including category-specific paragraphs
-                    analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, model_name)
+                    analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, effective_model)
 
                     # Save final prompt and analysis result to category-specific files
                     import os
@@ -353,7 +357,7 @@ if __name__ == "__main__":
     parser.add_argument("start_index", type=int, help="The starting index (0-based) of the PDF file list to process")
     parser.add_argument("end_index", type=int, help="The ending index (0-based) of the PDF file list to process (inclusive)")
     parser.add_argument("keywords_path", help="The path to the JSON file with enabler keywords")
-    parser.add_argument("--model", default="gpt-4.1-mini-2025-04-14", help="The LLM model to use for analysis")
+    parser.add_argument("--model", default="random", help="The LLM model to use for analysis. Use 'random' for random model selection from models.txt, or specify a model like 'openai/gpt-4.1-mini-2025-04-14'")
     parser.add_argument("--min-representative-matches", type=int, default=100, help="Minimum total matches to consider source representative")
     args = parser.parse_args()
 
