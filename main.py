@@ -25,6 +25,7 @@ FilteredOccurrence = Tuple[int, str, str]
 EnablerKeywords = Dict[str, List[str]]
 OccurrencesByEnabler = Dict[str, List[Occurrence]]
 FilteredOccurrencesByEnabler = Dict[str, List[FilteredOccurrence]]
+SignificantFileMap = Dict[str, Path]
 
 
 def extract_extended_context(text: str, keyword_start: int, keyword_end: int) -> str:
@@ -113,6 +114,7 @@ def analyze_occurrences(
     llm_analyzer: LLMAnalyzer,
     model_name: str | None,
     debug: bool,
+    significant_files: SignificantFileMap | None = None,
 ) -> FilteredOccurrencesByEnabler:
     """Filter occurrences using the LLM to keep only significant mentions."""
 
@@ -162,6 +164,17 @@ def analyze_occurrences(
 
             if llm_response and llm_response.strip().lower() == "significant":
                 filtered_enabler_occurrences[enabler].append((page_num, keyword, paragraph))
+                if significant_files and enabler in significant_files:
+                    try:
+                        with significant_files[enabler].open("a", encoding="utf-8") as handle:
+                            handle.write(paragraph)
+                            handle.write("\n\n")
+                    except OSError as exc:  # pragma: no cover - defensive logging
+                        print(
+                            Fore.RED
+                            + f"Warning: Failed to append significant paragraph for '{enabler}': {exc}"
+                            + Style.RESET_ALL
+                        )
 
     return filtered_enabler_occurrences
 
@@ -238,11 +251,9 @@ def process_category(
 
     prompt_file = base_dir / f"{base_name}_final_prompt_used_category_{category_index}.txt"
     result_file = base_dir / f"{base_name}_final_result_category_{category_index}.txt"
-    significant_file = base_dir / f"{base_name}_significant_paragraphs_category_{category_index}.txt"
 
     prompt_file.write_text(final_prompt_with_paragraphs, encoding="utf-8")
     result_file.write_text(analysis, encoding="utf-8")
-    significant_file.write_text("\n\n".join(category_paragraphs), encoding="utf-8")
 
     print(Fore.GREEN + f"Category {enabler} analysis completed and files saved." + Style.RESET_ALL)
 
@@ -284,6 +295,17 @@ def process_single_pdf(
     llm_analyzer = LLMAnalyzer()
     keyword_occurrence_prompt = llm_analyzer.load_prompt("keyword_occurrence_prompt.txt")
 
+    significant_files: SignificantFileMap = {}
+
+    for index, enabler in enumerate(enabler_occurrences.keys(), start=1):
+        file_path_candidate = (
+            pdf_path.parent
+            / f"{pdf_path.stem}_significant_paragraphs_category_{index}.txt"
+        )
+        significant_files[enabler] = file_path_candidate
+        if file_path_candidate.exists():
+            file_path_candidate.unlink()
+
     filtered_enabler_occurrences = analyze_occurrences(
         pdf_text,
         enabler_occurrences,
@@ -291,6 +313,7 @@ def process_single_pdf(
         llm_analyzer,
         effective_model,
         debug,
+        significant_files,
     )
 
     total_matches_summary = print_occurrences(filtered_enabler_occurrences)
