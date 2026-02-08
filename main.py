@@ -106,22 +106,6 @@ def load_enabler_keywords(keywords_path: Path) -> EnablerKeywords:
     return normalized_data
 
 
-def deduplicate_occurrences(occurrences: Sequence[Occurrence]) -> List[Occurrence]:
-    """Remove duplicate occurrences to avoid redundant LLM calls."""
-
-    seen: set[Tuple[int, str, str]] = set()
-    unique_occurrences: List[Occurrence] = []
-
-    for occurrence in occurrences:
-        page_num, keyword, paragraph, _ = occurrence
-        key = (page_num, keyword, paragraph)
-        if key not in seen:
-            seen.add(key)
-            unique_occurrences.append(occurrence)
-
-    return unique_occurrences
-
-
 def analyze_occurrences(
     pdf_text: str,
     enabler_occurrences: OccurrencesByEnabler,
@@ -144,7 +128,7 @@ def analyze_occurrences(
         )
 
         for index, (page_num, keyword, paragraph, absolute_start_idx) in enumerate(
-            deduplicate_occurrences(occurrences),
+            occurrences,
             start=1,
         ):
             print(

@@ -1,19 +1,14 @@
 Input Data: [Enabler Description, Keyword, and Passage]
 
-Evaluate if a Keyword is "significant" or "not significant" relative to a provided Enabler based on a 3-sentence passage.
+Evaluate if a Keyword is "significant" or "not significant" relative to a provided Enabler Description based on a 3-sentence Passage.
 
 Output: One word only ("significant" or "not significant").
 
 Criteria for "significant":
 
-The Current sentence (supported by context) must explicitly link the Keyword to the Enabler within the article’s original contribution.
-
-Relevance must be explicit, not inferred or based solely on authorship phrases (e.g., "we propose").
+The Current sentence (supported by context) must link the Keyword to the Enabler Description.
+In other words, if the Passage is related to the context of the Enabler Description, the passage should be considered "significant".
 
 Criteria for "not significant":
 
-The Keyword is used generically, operationally, or for internal technical descriptions.
-
-The text refers to background, related works, benchmarks, citations, code, or reused methods.
-
-If the link to the Enabler is implicit or doubtful, default to "not significant".
+The Passages that do not link the Keyword to the Enabler Description. Passages from papers' references or related works must be considered "non significant". 

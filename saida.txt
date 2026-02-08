@@ -1,0 +1,342 @@
+Found 25 PDF files. Processing files from index 2 to 2:
+  2: A vertex based approach to crystal facet modelling in phase field.pdf
+
+
+-------------> Starting processing for file: A vertex based approach to crystal facet modelling in phase field.pdf
+Reading PDF file: C:\Users\Scalifax\CodeRepository\REFSIM2026\A vertex based approach to crystal facet modelling in phase field.pdf
+Extracted text from page 1:
+Extracted text from page 2:
+Extracted text from page 3:
+Extracted text from page 4:
+Extracted text from page 5:
+Extracted text from page 6:
+Extracted text from page 7:
+Extracted text from page 8:
+Extracted text from page 9:
+Extracted text from page 10:
+Extracted text from page 11:
+Extracted text from page 12:
+Extracted text from page 13:
+Extracted text from page 14:
+Extracted text from page 15:
+Extracted text from page 16:
+Extracted text from page 17:
+Extracted text from page 18:
+Extracted text from page 19:
+Extracted text from page 20:
+Extracted text from page 21:
+Saved extracted text to C:\Users\Scalifax\CodeRepository\REFSIM2026\A vertex based approach to crystal facet modelling in phase field.txt
+
+
+
+-------------> PDF text extraction completed!!
+
+
+Loading keywords from: C:\Users\Scalifax\CodeRepository\KeyFiles\REFSIM2026.json
+Loaded 3 enabler categories.
+
+
+ -> Searching for keyword occurrences in PDF text...
+Total keyword occurrences found: 315
+
+
+Loaded 3 models from models.txt: google/gemini-3-flash-preview, openai/gpt-5-mini, x-ai/grok-4-fast
+
+
+--------> Processing occurrences for enabler category: Paper originality refers to how new, novel, or innovative the research contribution is - whether it advances knowledge, introduces new ideas, or provides insights that were not previously available (120 occurrences)
+
+
+-----> Occurrence 1: Keyword 'paper' on page 1
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: Jimack , A.M.
+Current sentence: Mullis 
+University of Leeds, UK   
+ARTICLE INFO  
+Keywords: 
+Crystal growth 
+Phase field 
+Anisotropy 
+Facets ABSTRACT  
+This paper seeks a vertex based approach to faceted anisotropy in phase field modelling of crystal growth.
+Next sentence: We 
+examine Wulff shapes and the connection they have with phase field formulations.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
+
+
+-----> Occurrence 2: Keyword 'paper' on page 1
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: This led to models such as [3] 
+which exhibit a high degree of phase field width independence.
+Current sentence: None -
+theless it is vital that the formulation used for the simulations is as 
+efficient as possible and one of the aims of this paper is to improve ef-
+ficiency in the anisotropy implementation.
+Next sentence: The phase field simulation of complex crystal morphologies, uses the 
+phase variable, ¤ò, and necessarily involves the inclusion of an anisotropy 
+function, A┬àÔïê¤ò┬å, which reflects, at the mesoscopic scale, the underlying 
+crystallography of the ordering at the atomic scale.
+================================================================================
+Selected model: openai/gpt-5-mini
+    LLM response: significant
+
+
+-----> Occurrence 3: Keyword 'approach' on page 1
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: Published by Elsevier B.V.
+Current sentence: This is an open access article under the CC BY license ( http://creativecommons.org/licenses/by/4.0/ ).A vertex based approach to crystal facet modelling in phase field 
+P.C.
+Next sentence: Bollada*, P.K.
+================================================================================
+Selected model: google/gemini-3-flash-preview
+    LLM response: significant
+
+
+-----> Occurrence 4: Keyword 'approach' on page 1
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: Jimack , A.M.
+Current sentence: Mullis 
+University of Leeds, UK   
+ARTICLE INFO  
+Keywords: 
+Crystal growth 
+Phase field 
+Anisotropy 
+Facets ABSTRACT  
+This paper seeks a vertex based approach to faceted anisotropy in phase field modelling of crystal growth.
+Next sentence: We 
+examine Wulff shapes and the connection they have with phase field formulations.
+================================================================================
+Selected model: openai/gpt-5-mini
+    LLM response: significant
+
+
+-----> Occurrence 5: Keyword 'approach' on page 1
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: On inspecting current ap-
+proaches to modelling facets within phase field we observe that there are two distinct approaches: one imple -
+ments the faceting purely in the kinetic parameter thus avoiding the complications of taking gradients of 
+discontinuous functions; while the second is based upon regularisation of the anisotropy function within the free 
+energy function.
+Current sentence: Armed with our new insight into the operation of anisotropy within phase field we refine the 
+second of these and advocate a vertex based approach to facet anisotropy modelling.
+Next sentence: Results include regular and 
+irregular morphologies and hill-valley growth.
+================================================================================
+Selected model: google/gemini-3-flash-preview
+    LLM response: significant
+
+
+-----> Occurrence 6: Keyword 'approaches' on page 1
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: We 
+examine Wulff shapes and the connection they have with phase field formulations.
+Current sentence: On inspecting current ap-
+proaches to modelling facets within phase field we observe that there are two distinct approaches: one imple -
+ments the faceting purely in the kinetic parameter thus avoiding the complications of taking gradients of 
+discontinuous functions; while the second is based upon regularisation of the anisotropy function within the free 
+energy function.
+Next sentence: Armed with our new insight into the operation of anisotropy within phase field we refine the 
+second of these and advocate a vertex based approach to facet anisotropy modelling.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
+
+
+-----> Occurrence 7: Keyword 'results' on page 1
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: On inspecting current ap-
+proaches to modelling facets within phase field we observe that there are two distinct approaches: one imple -
+ments the faceting purely in the kinetic parameter thus avoiding the complications of taking gradients of 
+discontinuous functions; while the second is based upon regularisation of the anisotropy function within the free 
+energy function.
+Current sentence: Armed with our new insight into the operation of anisotropy within phase field we refine the 
+second of these and advocate a vertex based approach to facet anisotropy modelling.
+Next sentence: Results include regular and 
+irregular morphologies and hill-valley growth.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
+
+
+-----> Occurrence 8: Keyword 'new' on page 1
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: On inspecting current ap-
+proaches to modelling facets within phase field we observe that there are two distinct approaches: one imple -
+ments the faceting purely in the kinetic parameter thus avoiding the complications of taking gradients of 
+discontinuous functions; while the second is based upon regularisation of the anisotropy function within the free 
+energy function.
+Current sentence: Armed with our new insight into the operation of anisotropy within phase field we refine the 
+second of these and advocate a vertex based approach to facet anisotropy modelling.
+Next sentence: Results include regular and 
+irregular morphologies and hill-valley growth.
+================================================================================
+Selected model: openai/gpt-5-mini
+    LLM response: significant
+
+
+-----> Occurrence 9: Keyword 'insight' on page 1
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: On inspecting current ap-
+proaches to modelling facets within phase field we observe that there are two distinct approaches: one imple -
+ments the faceting purely in the kinetic parameter thus avoiding the complications of taking gradients of 
+discontinuous functions; while the second is based upon regularisation of the anisotropy function within the free 
+energy function.
+Current sentence: Armed with our new insight into the operation of anisotropy within phase field we refine the 
+second of these and advocate a vertex based approach to facet anisotropy modelling.
+Next sentence: Results include regular and 
+irregular morphologies and hill-valley growth.
+================================================================================
+Selected model: openai/gpt-5-mini
+    LLM response: significant
+
+
+-----> Occurrence 10: Keyword 'paper' on page 2
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: The latter, bulk modelling, is the more closely 
+linked to thermodynamics, whereas surface modelling is completely 
+divorced from bulk properties.
+Current sentence: This paper concerns surface modelling.
+Next sentence: Surface modelling and phase 
+field appear simultaneously through the introduction of an interface 
+width, being a measure of the size of the transition region.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
+
+
+-----> Occurrence 11: Keyword 'paper' on page 2
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: A major contribution to 
+the understanding of anisotropy in phase field is presented in [9] which 
+associates a vector field (termed the ╬¥-vector) with the anisotropy and 
+the resulting equilibrium crystal shape - the Wulff shape: [9] also de-
+velops, to some extent, the method for implementing this in phase field.
+Current sentence: We have a further look at this term from the perspective of a differential 
+form in this paper.
+Next sentence: We then inspect facet models.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
+
+
+-----> Occurrence 12: Keyword 'paper' on page 2
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: Once the normals to the facets are specified, then a surface energy can be 
+formed that is a function of these normals and the direction of growth.
+Current sentence: This approach is to be compared with the approach advocated in this 
+paper, where it is the vertices of the polyhedra or polygons that form the 
+basis of the surface energy construction.
+Next sentence: Facet models in phase field tend to begin with an ÔÇ£ideal ÔÇØ anisotropy 
+function that typically contain unappealing discontinuities which, in 
+turn, will likely cause numerical instability ÔÇô see [17].
+================================================================================
+Selected model: openai/gpt-5-mini
+    LLM response: significant
+
+
+-----> Occurrence 13: Keyword 'approach' on page 2
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: [10ÔÇô14].
+Current sentence: Some modellers stayed loyal to free energy implementation [15ÔÇô19], 
+through the approach of regularisation.
+Next sentence: The first two papers, produce 
+faceting by increasing the strength of the anisotropy to produce a Wulff 
+shape with pronounced cusps (ears), whereas the latter three papers 
+work with anisotropy with formally flat sides, no cusps and rounded 
+ÔÇÿvertices ÔÇÖ.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: not significant
+
+
+-----> Occurrence 14: Keyword 'approach' on page 2
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: The example in [17] is a square and that of [18] is focussed 
+around hexagonal growth, but in [19] is a more general methodology 
+that includes arbitrary shapes in 2 and 3 dimensions.
+Current sentence: The approach of [19] is focussed on the facets of the shape in 3D.
+Next sentence: Once the normals to the facets are specified, then a surface energy can be 
+formed that is a function of these normals and the direction of growth.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
+
+
+-----> Occurrence 15: Keyword 'approach' on page 2
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: Once the normals to the facets are specified, then a surface energy can be 
+formed that is a function of these normals and the direction of growth.
+Current sentence: This approach is to be compared with the approach advocated in this 
+paper, where it is the vertices of the polyhedra or polygons that form the 
+basis of the surface energy construction.
+Next sentence: Facet models in phase field tend to begin with an ÔÇ£ideal ÔÇØ anisotropy 
+function that typically contain unappealing discontinuities which, in 
+turn, will likely cause numerical instability ÔÇô see [17].
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
+
+
+-----> Occurrence 16: Keyword 'approach' on page 2
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: Once the normals to the facets are specified, then a surface energy can be 
+formed that is a function of these normals and the direction of growth.
+Current sentence: This approach is to be compared with the approach advocated in this 
+paper, where it is the vertices of the polyhedra or polygons that form the 
+basis of the surface energy construction.
+Next sentence: Facet models in phase field tend to begin with an ÔÇ£ideal ÔÇØ anisotropy 
+function that typically contain unappealing discontinuities which, in 
+turn, will likely cause numerical instability ÔÇô see [17].
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
+
+
+-----> Occurrence 17: Keyword 'approaches' on page 2
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: Thus, one is led to conjecture that the anisotropy of a perfect 
+square is formally 
+A┬êÔÇácos╬¢ÔÇá┬çÔÇásin╬¢ÔÇáB (5) 
+Fig.
+Current sentence: 1.The anisotropy of a square with Ôêè┬ê0 (isotropic) and as Ôêè┬ê1C2C3 the 
+anisotropy approaches that of being related to a perfect square Wulff shape 
+(not shown).
+Next sentence: Fig.
+================================================================================
+Selected model: openai/gpt-5-mini
