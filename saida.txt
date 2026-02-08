@@ -82,7 +82,7 @@ phase variable, ¤ò, and necessarily involves the inclusion of an anisotropy
 function, A┬àÔïê¤ò┬å, which reflects, at the mesoscopic scale, the underlying 
 crystallography of the ordering at the atomic scale.
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: openai/gpt-5-mini
     LLM response: significant
 
 
@@ -95,7 +95,7 @@ Current sentence: This is an open access article under the CC BY license ( http:
 P.C.
 Next sentence: Bollada*, P.K.
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: openai/gpt-5-mini
     LLM response: significant
 
 
@@ -134,7 +134,7 @@ second of these and advocate a vertex based approach to facet anisotropy modelli
 Next sentence: Results include regular and 
 irregular morphologies and hill-valley growth.
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: openai/gpt-5-mini
     LLM response: significant
 
 
@@ -152,7 +152,7 @@ energy function.
 Next sentence: Armed with our new insight into the operation of anisotropy within phase field we refine the 
 second of these and advocate a vertex based approach to facet anisotropy modelling.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
+Selected model: x-ai/grok-4-fast
     LLM response: significant
 
 
@@ -167,7 +167,7 @@ irregular morphologies and hill-valley growth.
 Next sentence: We also present high undercooling effects on faceting, which can 
 cause breaks in facets and, in the case of irregular shapes, distortion of the underlying Wulff shape.
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: openai/gpt-5-mini
     LLM response: significant
 
 
@@ -185,7 +185,7 @@ second of these and advocate a vertex based approach to facet anisotropy modelli
 Next sentence: Results include regular and 
 irregular morphologies and hill-valley growth.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: x-ai/grok-4-fast
     LLM response: significant
 
 
@@ -203,7 +203,7 @@ second of these and advocate a vertex based approach to facet anisotropy modelli
 Next sentence: Results include regular and 
 irregular morphologies and hill-valley growth.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: google/gemini-3-flash-preview
     LLM response: significant
 
 
@@ -219,8 +219,8 @@ Next sentence: Surface modelling and phase
 field appear simultaneously through the introduction of an interface 
 width, being a measure of the size of the transition region.
 ================================================================================
-Selected model: x-ai/grok-4-fast
-    LLM response: significant
+Selected model: openai/gpt-5-mini
+    LLM response: not significant
 
 
 -----> Occurrence 11: Keyword 'paper' on page 2
@@ -233,8 +233,8 @@ Current sentence: We then inspect facet models.
 Next sentence: A feature of all facet models is to create 
 anisotropy with forbidden angles.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
-    LLM response: not significant
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
 
 
 -----> Occurrence 12: Keyword 'paper' on page 2
@@ -250,7 +250,7 @@ Next sentence: Facet models in phase field tend to begin with an ÔÇ£ideal Ô�
 function that typically contain unappealing discontinuities which, in 
 turn, will likely cause numerical instability ÔÇô see [17].
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: x-ai/grok-4-fast
     LLM response: significant
 
 
@@ -267,8 +267,8 @@ shape with pronounced cusps (ears), whereas the latter three papers
 work with anisotropy with formally flat sides, no cusps and rounded 
 ÔÇÿvertices ÔÇÖ.
 ================================================================================
-Selected model: openai/gpt-5-mini
-    LLM response: not significant
+Selected model: google/gemini-3-flash-preview
+    LLM response: 
 
 
 -----> Occurrence 14: Keyword 'approach' on page 2
@@ -282,8 +282,8 @@ Current sentence: The approach of [19] is focussed on the facets of the shape in
 Next sentence: Once the normals to the facets are specified, then a surface energy can be 
 formed that is a function of these normals and the direction of growth.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
-    LLM response: not significant
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
 
 
 -----> Occurrence 15: Keyword 'approach' on page 2
@@ -316,7 +316,7 @@ Next sentence: Facet models in phase field tend to begin with an ÔÇ£ideal Ô�
 function that typically contain unappealing discontinuities which, in 
 turn, will likely cause numerical instability ÔÇô see [17].
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: openai/gpt-5-mini
     LLM response: significant
 
 
@@ -333,7 +333,7 @@ anisotropy approaches that of being related to a perfect square Wulff shape
 (not shown).
 Next sentence: Fig.
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: google/gemini-3-flash-preview
     LLM response: not significant
 
 
@@ -364,7 +364,7 @@ Current sentence: We have a further look at this term from the perspective of a 
 form in this paper.
 Next sentence: We then inspect facet models.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: google/gemini-3-flash-preview
     LLM response: significant
 
 
@@ -388,7 +388,7 @@ velops, to some extent, the method for implementing this in phase field.
 Next sentence: We have a further look at this term from the perspective of a differential 
 form in this paper.
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: openai/gpt-5-mini
     LLM response: not significant
 
 
@@ -405,7 +405,7 @@ Current sentence: We have a further look at this term from the perspective of a 
 form in this paper.
 Next sentence: We then inspect facet models.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
+Selected model: openai/gpt-5-mini
     LLM response: significant
 
 
@@ -449,8 +449,8 @@ nonical formulation is the most natural starting point of the different
 formulations, leading to the most straightforward geometric interpre -
 tation.
 ================================================================================
-Selected model: openai/gpt-5-mini
-    LLM response: not significant
+Selected model: google/gemini-3-flash-preview
+    LLM response: significant
 
 
 -----> Occurrence 24: Keyword 'paper' on page 3
@@ -517,7 +517,7 @@ The relationship between the two is
 Wi┬êGij╬¥j(9)  
 where Gij are the components of the metric of flat space.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: x-ai/grok-4-fast
     LLM response: not significant
 
 
@@ -535,7 +535,7 @@ that R┬êÔÇáXÔÇáis the length of the vector.
 Next sentence: The angle ╬¢ is not to be confused 
 with the angle, ╬©, at the origin where the vector X is located - see Fig.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
+Selected model: openai/gpt-5-mini
     LLM response: not significant
 
 
@@ -556,7 +556,7 @@ formulations, leading to the most straightforward geometric interpre -
 tation.
 ================================================================================
 Selected model: openai/gpt-5-mini
-    LLM response: not significant
+    LLM response: significant
 
 
 -----> Occurrence 29: Keyword 'approach' on page 3
@@ -595,8 +595,8 @@ Next sentence: In this paper we address the above questions via a discussion of 
 shapes in Section 2, facet modelling of simple shapes in Section 3 and 
 more generally in Section 4.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
-    LLM response: significant
+Selected model: openai/gpt-5-mini
+    LLM response: not significant
 
 
 -----> Occurrence 31: Keyword 'results' on page 3
@@ -615,8 +615,8 @@ Next sentence: Ultimately, it must be modified for direct implementation, the
 end result being a formally convex Wulff shape with approximately 
 sharp corners and near flat edges (in 2D).
 ================================================================================
-Selected model: google/gemini-3-flash-preview
-    LLM response: not significant
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
 
 
 -----> Occurrence 32: Keyword 'result' on page 3
@@ -635,7 +635,7 @@ morphology from observation and infer the surface energy from the
 vertices of the faceted object using the approach we detail later in this 
 paper.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: google/gemini-3-flash-preview
     LLM response: not significant
 
 
@@ -678,8 +678,8 @@ This section states and looks at the consequences of a definition of
 anisotropy relating to surface orientation, n and crystal vertices, pi, 
 given in Eq.
 ================================================================================
-Selected model: openai/gpt-5-mini
-    LLM response: not significant
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
 
 
 -----> Occurrence 35: Keyword 'paper' on page 4
@@ -695,7 +695,7 @@ anisotropy relating to surface orientation, n and crystal vertices, pi,
 given in Eq.
 Next sentence: 33, which is the central equation of this paper.
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: google/gemini-3-flash-preview
     LLM response: significant
 
 
@@ -712,8 +712,8 @@ Next sentence: It is one of the purposes of this
 paper to verify whether equilibrium results for facet models do indeed 
 coincide with the faceted Wulff shapes.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
-    LLM response: significant
+Selected model: x-ai/grok-4-fast
+    LLM response: not significant
 
 
 -----> Occurrence 37: Keyword 'result' on page 4
@@ -729,8 +729,8 @@ Computational Materials Science 192 (2021) 110331
 5for all n and use this to prove results in phase field including the 
 behaviour of a facet model at a vertex.
 ================================================================================
-Selected model: x-ai/grok-4-fast
-    LLM response: not significant
+Selected model: google/gemini-3-flash-preview
+    LLM response: significant
 
 
 -----> Occurrence 38: Keyword 'paper' on page 5
@@ -750,7 +750,7 @@ where pi specifies the vertices and the dot product is associated with an
 angle, and Hi┬à┬åis the Heaviside function.
 Next sentence: Eq.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: google/gemini-3-flash-preview
     LLM response: not significant
 
 
@@ -767,7 +767,7 @@ develop in this section, which we state here to be:
 A┬àn┬å┬êmax┬ànÔïàpiCi┬ê1BBn┬å (33)  
 for n vertices.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
+Selected model: x-ai/grok-4-fast
     LLM response: not significant
 
 
@@ -785,8 +785,8 @@ comparison with the work of [17] and also serves to illustrate why
 applying either coordinate approaches to arbitrary faceted crystals in 3D 
 will likely lead to difficulties upon implementation.
 ================================================================================
-Selected model: openai/gpt-5-mini
-    LLM response: not significant
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
 
 
 -----> Occurrence 41: Keyword 'approach' on page 5
@@ -822,7 +822,7 @@ fX┬êÒÇë
 so that 
 Fig.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
+Selected model: x-ai/grok-4-fast
     LLM response: not significant
 
 
@@ -843,8 +843,8 @@ iÔîï1Ew
 for large w and qiF0.
 Next sentence: So we see that the expression Eq.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
-    LLM response: not significant
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
 
 
 -----> Occurrence 43: Keyword 'approaches' on page 5
@@ -861,8 +861,8 @@ comparison with the work of [17] and also serves to illustrate why
 applying either coordinate approaches to arbitrary faceted crystals in 3D 
 will likely lead to difficulties upon implementation.
 ================================================================================
-Selected model: x-ai/grok-4-fast
-    LLM response: significant
+Selected model: google/gemini-3-flash-preview
+    LLM response: not significant
 
 
 -----> Occurrence 44: Keyword 'approaches' on page 5
@@ -898,7 +898,7 @@ fX┬êÒÇë
 so that 
 Fig.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: x-ai/grok-4-fast
     LLM response: not significant
 
 
@@ -969,7 +969,7 @@ spectives: the angle coordinate and the Cartesian coordinate approaches.
 Next sentence: Traditional anisotropy is formulated in angle coordinates 
 and thus it would seem natural to use this approach for faceting too.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: x-ai/grok-4-fast
     LLM response: not significant
 
 
@@ -1018,7 +1018,7 @@ where the effect of a chosen constant, ╬╗, is to round off the corners of th
 square: ╬╗┬ê0 is a circle; ╬╗┬êÔê× is a square; intermediate values give a 
 square with rounded corners.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: google/gemini-3-flash-preview
     LLM response: not significant
 
 
@@ -1051,7 +1051,7 @@ from the centre of one facet to the centre of the next facet to map to the
 one vertex common to both under the mapping Eq.
 Next sentence: 59.
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: google/gemini-3-flash-preview
     LLM response: not significant
 
 
@@ -1068,7 +1068,7 @@ Next sentence: For values of 0DÔêèD1E3 a
 faceted shape emerges but it does not have the property, for any Ôêè, that 
 the Wulff shape only consists of vertices.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: x-ai/grok-4-fast
     LLM response: not significant
 
 
@@ -1085,7 +1085,7 @@ Next sentence: So, in some sense, the formu -
 lation of [17] where A┬êÔÇácos╬¢ÔÇá┬çÔÇásin╬¢ÔÇáis more true to the Wulff shape 
 than, for example, A┬ê1┬çÔêèÔÇásin2╬¢ÔÇá.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: google/gemini-3-flash-preview
     LLM response: not significant
 
 
@@ -1119,7 +1119,7 @@ tinuities along faces and edges can be a substantial geometric
 undertaking for a general collection of vertices.
 Next sentence: 3.2.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: x-ai/grok-4-fast
     LLM response: not significant
 
 
@@ -1132,7 +1132,7 @@ Current sentence: Another irregularity that can occur is when the vertices are n
 distance from a common point such as in Fig.
 Next sentence: 10.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: x-ai/grok-4-fast
     LLM response: not significant
 
 
@@ -1148,8 +1148,8 @@ Next sentence: The extreme event
 where the anisotropy fails to meet on the facet is not allowed (see 
 Fig.
 ================================================================================
-Selected model: x-ai/grok-4-fast
-    LLM response: significant
+Selected model: openai/gpt-5-mini
+    LLM response: not significant
 
 
 -----> Occurrence 59: Keyword 'approach' on page 10
@@ -1201,7 +1201,7 @@ establish the connection between sharp interface theory and phase field,
 and demonstrate the coarsening dynamics of the faceting instability 
 during growth.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: x-ai/grok-4-fast
     LLM response: not significant
 
 
@@ -1222,7 +1222,7 @@ T┬ê╬┤2┬àA┬àn┬åÔïê¤òÔèÿ╬¥ 1
 which, comparing with the expression (5.10) in [21], reveals it to be the 
 simpler model.
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: google/gemini-3-flash-preview
     LLM response: significant
 
 
@@ -1239,7 +1239,7 @@ Allen ÔÇôCahn phase field equation for the simulation of a square Wulff
 shape, and is the approach we build on in this paper for general shapes in 
 two and three dimensions.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: x-ai/grok-4-fast
     LLM response: not significant
 
 
@@ -1256,7 +1256,7 @@ Next sentence: This is our preferred numerical method which we detail
 for 2D only, but also a finite element method will have the same ad-
 vantages.
 ================================================================================
-Selected model: openai/gpt-5-mini
+Selected model: google/gemini-3-flash-preview
     LLM response: not significant
 
 
@@ -1271,7 +1271,7 @@ using our knowledge of the Wulff shape and its relation to phase field.
 Next sentence: The approximation to the singularity is avoided but the problem of hÔåÆ0 
 is not avoided.
 ================================================================================
-Selected model: google/gemini-3-flash-preview
+Selected model: openai/gpt-5-mini
     LLM response: significant
 
 
@@ -1286,7 +1286,7 @@ using our knowledge of the Wulff shape and its relation to phase field.
 Next sentence: The approximation to the singularity is avoided but the problem of hÔåÆ0 
 is not avoided.
 ================================================================================
-Selected model: x-ai/grok-4-fast
+Selected model: openai/gpt-5-mini
     LLM response: significant
 
 
@@ -1300,5 +1300,192 @@ Current sentence: This is our preferred numerical method which we detail
 for 2D only, but also a finite element method will have the same ad-
 vantages.
 Next sentence: 1.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: significant
+
+
+-----> Occurrence 68: Keyword 'approach' on page 11
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: We use the stencil 
+Ôêéf
+ÔêéX┬ê
+f┬àX 2h┬å 8f┬àX hCY┬å┬ç8f┬àX┬çhCY┬å f┬àX┬ç2hCY┬å
+12h(91)  
+Please note the distinction between h and ╬öx.
+Current sentence: ╬öx is the grid distance 
+between mesh points (assumed equal in x and y) but h, related to a 
+typical maximum value of ÔÇáÔïê¤òÔÇá, can be chosen arbitrarily taking into 
+account machine accuracy and how closely one wants the numerical 
+scheme to follow the approximation to the max function.
+Next sentence: A smaller h 
+gives lower curvature on the facets.
+================================================================================
+Selected model: openai/gpt-5-mini
+    LLM response: not significant
+
+
+-----> Occurrence 69: Keyword 'approach' on page 11
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: We use the stencil 
+Ôêéf
+ÔêéX┬ê
+f┬àX 2h┬å 8f┬àX hCY┬å┬ç8f┬àX┬çhCY┬å f┬àX┬ç2hCY┬å
+12h(91)  
+Please note the distinction between h and ╬öx.
+Current sentence: ╬öx is the grid distance 
+between mesh points (assumed equal in x and y) but h, related to a 
+typical maximum value of ÔÇáÔïê¤òÔÇá, can be chosen arbitrarily taking into 
+account machine accuracy and how closely one wants the numerical 
+scheme to follow the approximation to the max function.
+Next sentence: A smaller h 
+gives lower curvature on the facets.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: not significant
+
+
+-----> Occurrence 70: Keyword 'approaches' on page 11
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: Similarly 
+gXYÔë¬g┬àX┬çhCY┬çhCz┬å┬çg┬àX hCY hCZ┬å
+4h2
+ g┬àX hCY┬çhCZ┬å┬çg┬àX┬çhCY hCZ┬å
+4h2(81)  
+and hence 
+ÔïêÔïêg┬êÔÄó
+Ôê«gXX gXYgXZ
+gXY gYYgYZ
+gXZ gZYgZZÔÄÑ
+Ô¿Ç (82)  
+is readily computed for any point once g via f is defined in the code.
+Current sentence: This 
+implementation method was used in the simulations illustrated in Fig.s 
+26 and 27 to be discussed further in the next section.
+Next sentence: The next step is to write 
+ÔïêÔïàÔêég
+ÔêéÔïê¤ò┬êÔïêÔïê¤òBÔïêÔïêgÔÇáX┬êÔïê¤ò (83)  
+The above certainly has the virtue of simplicity and is easily imple -mented in both 2D and 3D.
+================================================================================
+Selected model: openai/gpt-5-mini
+    LLM response: not significant
+
+
+-----> Occurrence 71: Keyword 'approaches' on page 11
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: This 
+implementation method was used in the simulations illustrated in Fig.s 
+26 and 27 to be discussed further in the next section.
+Current sentence: The next step is to write 
+ÔïêÔïàÔêég
+ÔêéÔïê¤ò┬êÔïêÔïê¤òBÔïêÔïêgÔÇáX┬êÔïê¤ò (83)  
+The above certainly has the virtue of simplicity and is easily imple -mented in both 2D and 3D.
+Next sentence: That said, despite ÔïêÔïêg being approximated, 
+it is still an approximation to a singularity.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: not significant
+
+
+-----> Occurrence 72: Keyword 'result' on page 11
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: 16.Illustration of the finite volume scheme for implementation in a finite 
+difference code.
+Current sentence: The cell of shaded area is of size ╬öx2 and the broken line of 
+length ╬öx is part of the boundary.
+Next sentence: P.C.
+================================================================================
+Selected model: openai/gpt-5-mini
+    LLM response: not significant
+
+
+-----> Occurrence 73: Keyword 'contributions' on page 11
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: 2.
+Current sentence: We write with g┬ê1
+2f2 
+ÔïêÔïàDg┬êlim
+VÔåÆ01
+VÔïâ
+DgÔïàndÔêéV (86)  
+where n is the normal to the boundary of volume, V, denoted ÔêéV.
+Next sentence: In 
+2D on a Cartesian mesh labelled iCj this becomes four integral con-
+tributions for each side of the square surrounding the point (see 
+Fig.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: not significant
+
+
+-----> Occurrence 74: Keyword 'paper' on page 12
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: 33, set all vertices, piCi┬ê
+1BBN, to lie equidistant on the unit circle.
+Current sentence: Then is follows that, as NÔåÆÔê× 
+the maximum value is attained when pi┬ên and so A┬ê1 and the 
+isotropic model is reproduced.
+Next sentence: 5.Phase field simulation results 
+Motivated by curiosity to see the effect of the discontinuity in the 
+anisotropy model, we first inspect the pseudo model given in Eq.
+================================================================================
+Selected model: x-ai/grok-4-fast
+    LLM response: not significant
+
+
+-----> Occurrence 75: Keyword 'paper' on page 12
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: Simply setting this term to zero results in 
+melting and so, by trial and error we find a temperature just low enough 
+to give growth.
+Current sentence: However, its evolution towards that end state is interesting in itself 
+and can be compared with non-phase field models such as [34,35] , being 
+discrete models for growth and dissolution respectively.
+Next sentence: As is normal 
+practice, the phase field simulation seeds the growth in a metastable 
+energy state as a circle or sphere.
+================================================================================
+Selected model: google/gemini-3-flash-preview
+    LLM response: not significant
+
+
+-----> Occurrence 76: Keyword 'results' on page 12
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: In Fig.
+Current sentence: 17, we show one of the effects of neglecting this term.
+Next sentence: Here, the curvature, ╬║, is output at a point in the middle of a facet of the 
+desired square Wulff shape, with and without the correct treatment.
+================================================================================
+Selected model: openai/gpt-5-mini
+    LLM response: not significant
+
+
+-----> Occurrence 77: Keyword 'results' on page 12
+
+    [DEBUG] Context being sent to LLM:
+================================================================================
+Previous sentence: 18 and 19 which is coloured according to values of 
+the solute field, c, with the internal region being at the solid concen -
+tration.
+Current sentence: We employ the approximation, Eq.
+Next sentence: 34 with w┬ê512 to Eq.
 ================================================================================
 Selected model: x-ai/grok-4-fast

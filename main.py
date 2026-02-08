@@ -31,32 +31,32 @@ SignificantFileMap = Dict[str, Path]
 def extract_extended_context(text: str, keyword_start: int, keyword_end: int) -> str:
     """Return the surrounding sentences for the keyword occurrence."""
 
-    sentence_endings = re.compile(r"(?<=[.!?])\s+")
-    sentences = sentence_endings.split(text)
-    current_pos = 0
-    sentence_index = None
+    sentence_pattern = re.compile(r"[^.!?]*[.!?]|[^.!?]+$", re.DOTALL)
+    sentences: List[Tuple[str, int, int]] = []
 
-    for index, sentence in enumerate(sentences):
-        sentence_start = current_pos
-        sentence_end_pos = sentence_start + len(sentence)
-        if sentence_start <= keyword_start <= sentence_end_pos:
-            sentence_index = index
+    for match in sentence_pattern.finditer(text):
+        sentence = match.group()
+        if sentence.strip():
+            sentences.append((sentence.strip(), match.start(), match.end()))
+
+    current_index = None
+    for index, (_sentence, start, end) in enumerate(sentences):
+        if start <= keyword_start < end:
+            current_index = index
             break
-        current_pos = sentence_end_pos + 1  # account for the space after punctuation
 
-    if sentence_index is None:
-        return sentences[0].strip() if sentences else ""
-
-    previous_sentence = sentences[sentence_index - 1] if sentence_index > 0 else ""
-    current_sentence = sentences[sentence_index]
-    next_sentence = sentences[sentence_index + 1] if sentence_index < len(sentences) - 1 else ""
+    if current_index is None:
+        return sentences[0][0] if sentences else ""
 
     extended_context_parts: List[str] = []
-    if previous_sentence:
-        extended_context_parts.append(f"Previous sentence: {previous_sentence.strip()}")
-    extended_context_parts.append(f"Current sentence: {current_sentence.strip()}")
-    if next_sentence:
-        extended_context_parts.append(f"Next sentence: {next_sentence.strip()}")
+
+    if current_index > 0:
+        extended_context_parts.append(f"Previous sentence: {sentences[current_index - 1][0]}")
+
+    extended_context_parts.append(f"Current sentence: {sentences[current_index][0]}")
+
+    if current_index < len(sentences) - 1:
+        extended_context_parts.append(f"Next sentence: {sentences[current_index + 1][0]}")
 
     return "\n".join(extended_context_parts)
 
@@ -121,6 +121,9 @@ def analyze_occurrences(
     filtered_enabler_occurrences: FilteredOccurrencesByEnabler = {
         enabler: [] for enabler in enabler_occurrences
     }
+    seen_paragraphs: Dict[str, set[str]] = {
+        enabler: set() for enabler in enabler_occurrences
+    }
 
     for enabler, occurrences in enabler_occurrences.items():
         print(
@@ -164,17 +167,20 @@ def analyze_occurrences(
 
             if llm_response and llm_response.strip().lower() == "significant":
                 filtered_enabler_occurrences[enabler].append((page_num, keyword, paragraph))
-                if significant_files and enabler in significant_files:
-                    try:
-                        with significant_files[enabler].open("a", encoding="utf-8") as handle:
-                            handle.write(paragraph)
-                            handle.write("\n\n")
-                    except OSError as exc:  # pragma: no cover - defensive logging
-                        print(
-                            Fore.RED
-                            + f"Warning: Failed to append significant paragraph for '{enabler}': {exc}"
-                            + Style.RESET_ALL
-                        )
+                normalized_paragraph = paragraph.strip()
+                if normalized_paragraph not in seen_paragraphs[enabler]:
+                    seen_paragraphs[enabler].add(normalized_paragraph)
+                    if significant_files and enabler in significant_files:
+                        try:
+                            with significant_files[enabler].open("a", encoding="utf-8") as handle:
+                                handle.write(paragraph)
+                                handle.write("\n\n")
+                        except OSError as exc:  # pragma: no cover - defensive logging
+                            print(
+                                Fore.RED
+                                + f"Warning: Failed to append significant paragraph for '{enabler}': {exc}"
+                                + Style.RESET_ALL
+                            )
 
     return filtered_enabler_occurrences
 

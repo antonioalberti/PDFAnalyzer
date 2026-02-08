@@ -6,19 +6,18 @@ class KeywordSearcher:
         self.enabler_keywords = enabler_keywords
 
     @staticmethod
+    def _iter_sentences(content):
+        sentence_pattern = re.compile(r'[^.!?]*[.!?]|[^.!?]+$', re.DOTALL)
+        for match in sentence_pattern.finditer(content):
+            sentence = match.group()
+            if sentence.strip():
+                yield sentence.strip(), match.start(), match.end()
+
+    @staticmethod
     def extract_context(content, start, end):
-        # Extract the full sentence containing the occurrence
-        # Split content into sentences using punctuation marks as delimiters
-        sentence_endings = re.compile(r'(?<=[.!?])\s+')
-        sentences = sentence_endings.split(content)
-        current_pos = 0
-        for sentence in sentences:
-            sentence_start = current_pos
-            sentence_end = sentence_start + len(sentence)
-            if sentence_start <= start <= sentence_end:
-                return sentence.strip()
-            current_pos = sentence_end + 1  # +1 for the space after punctuation
-        # Fallback: return the original snippet if no sentence found
+        for sentence, sentence_start, sentence_end in KeywordSearcher._iter_sentences(content):
+            if sentence_start <= start < sentence_end:
+                return sentence
         return content[start:end].strip()
 
     @staticmethod
