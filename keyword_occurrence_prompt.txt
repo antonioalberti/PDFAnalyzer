@@ -12,3 +12,5 @@ In other words, if the Passage is related to the context of the Enabler Descript
 Criteria for "not significant":
 
 The Passages that do not link the Keyword to the Enabler Description. Passages from papers' references or related works must be considered "non significant". 
+
+Answer in English.

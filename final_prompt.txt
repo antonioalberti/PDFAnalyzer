@@ -16,4 +16,4 @@ Additionally, here are significant paragraphs extracted from the paper that high
 
 TASK: Considering the CONTEXT above, write no more than three concise paragraphs summarizing how well the contributions identified in the significant paragraphs cover the CONTEXT provided.   
 
-Considering all above and the current state of the art in the article area, give a note for this paper after the paragraphs. The format must be: NOTE: X, where X is the result of your evaluation between 0 ant 10.
+Considering all above and the current state of the art in the article area, give a note for this paper after the paragraphs. The format must be: NOTE: X, where X is the result of your evaluation between 0 and 10. Answer in English.
