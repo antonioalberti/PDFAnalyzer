@@ -133,20 +133,20 @@ def analyze_occurrences(
         enabler: set() for enabler in enabler_occurrences
     }
 
-    for enabler, occurrences in enabler_occurrences.items():
+    for category_index, (enabler, occurrences) in enumerate(enabler_occurrences.items(), start=1):
         print(
             Fore.YELLOW
-            + f"\n\n--------> Processing occurrences for enabler category: {enabler} ({len(occurrences)} occurrences)"
+            + f"\n\n--------> Processing occurrences for enabler category {category_index}: {enabler} ({len(occurrences)} occurrences)"
             + Style.RESET_ALL
         )
 
-        for index, (page_num, keyword, paragraph, absolute_start_idx) in enumerate(
+        for occurrence_index, (page_num, keyword, paragraph, absolute_start_idx) in enumerate(
             occurrences,
             start=1,
         ):
             print(
                 Fore.MAGENTA
-                + f"\n\n-----> Occurrence {index}: Keyword '{keyword}' on page {page_num}"
+                + f"\n\n-----> Occurrence {occurrence_index}: Keyword '{keyword}' on page {page_num}"
                 + Style.RESET_ALL
             )
             extended_context = extract_extended_context(
@@ -201,9 +201,9 @@ def print_occurrences(enabler_occurrences: FilteredOccurrencesByEnabler) -> int:
         Fore.CYAN + "\n\n\n-------------> Keyword RELEVANT occurrences in all the file:" + Style.RESET_ALL
     )
 
-    for enabler, occurrences in enabler_occurrences.items():
+    for category_index, (enabler, occurrences) in enumerate(enabler_occurrences.items(), start=1):
         total_matches = len(occurrences)
-        print(Fore.YELLOW + f"{enabler} (Total Matches: {total_matches}):" + Style.RESET_ALL)
+        print(Fore.YELLOW + f"Category {category_index}: {enabler} (Total Matches: {total_matches}):" + Style.RESET_ALL)
         total_matches_summary += total_matches
 
         if occurrences:
@@ -235,7 +235,7 @@ def process_category(
 ) -> None:
     """Prepare prompts, call the LLM, and persist results for a single enabler."""
 
-    print(Fore.CYAN + f"\n\n-------------> Processing category: {enabler}" + Style.RESET_ALL)
+    print(Fore.CYAN + f"\n\n-------------> Processing category {category_index}: {enabler}" + Style.RESET_ALL)
 
     # Build the article summary section if available
     article_summary_section = ""
@@ -281,7 +281,7 @@ def process_category(
     prompt_file.write_text(final_prompt_with_paragraphs, encoding="utf-8")
     result_file.write_text(analysis, encoding="utf-8")
 
-    print(Fore.GREEN + f"Category {enabler} analysis completed and files saved." + Style.RESET_ALL)
+    print(Fore.GREEN + f"Category {category_index}: {enabler} analysis completed and files saved." + Style.RESET_ALL)
 
 
 def process_single_pdf(
@@ -355,11 +355,11 @@ def process_single_pdf(
     classified_keywords = keyword_searcher.classify_keywords(filtered_enabler_occurrences)
 
     print(Fore.CYAN + "Keyword Counts:" + Style.RESET_ALL)
-    for enabler, keyword_counter in classified_keywords.items():
+    for category_index, (enabler, keyword_counter) in enumerate(classified_keywords.items(), start=1):
         if keyword_counter:
-            print(Fore.YELLOW + f"{enabler}:" + Style.RESET_ALL)
+            print(Fore.YELLOW + f"Category {category_index}: {enabler}:" + Style.RESET_ALL)
             for keyword, count in keyword_counter.items():
-                print(Fore.GREEN + f"Keyword: {keyword}, Count: {count}" + Style.RESET_ALL)
+                print(Fore.GREEN + f"  Keyword: {keyword}, Count: {count}" + Style.RESET_ALL)
             print()
     print(Fore.GREEN + f"Total Matches for All Families: {total_matches_summary}" + Style.RESET_ALL)
 

@@ -1,3 +1,4 @@
+
 import os
 import random
 from openai import OpenAI
@@ -107,7 +108,8 @@ class LLMAnalyzer:
         return llm_response
 
     # Fixed model for web search - supports internet search
-    WEB_SEARCH_MODEL = "openai/gpt-5-chat"
+    # Using openai/gpt-4o which has web search capability
+    WEB_SEARCH_MODEL = "openai/gpt-4o"
 
     def fetch_article_summary(self, article_title: str, model_name: str | None = None) -> str | None:
         """Fetch a summary of the article from the internet using the LLM.
@@ -129,28 +131,61 @@ class LLMAnalyzer:
         print(Fore.CYAN + f"Using fixed model for web search: {search_model}" + Style.RESET_ALL)
 
         system_message = (
-            "You are an expert assistant specialized in researching scientific articles."
+            "You are an expert assistant specialized in researching scientific articles. "
+            "IMPORTANT: You must search the internet for information about this article. "
+            "Use your web search capability to find details about the paper."
         )
         
-        # Enable web search for the model
-        response = self.client.chat.completions.create(
-            model=search_model,
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": prompt}
-            ],
-            extra_body={"enable_web_search": True}
-        )
-
-        if not response.choices:
-            print(Fore.RED + "Error: No response choices found." + Style.RESET_ALL)
-            return None
-
-        llm_response = response.choices[0].message.content.strip()
+        print(Fore.CYAN + "Calling LLM with web search enabled..." + Style.RESET_ALL)
         
-        if llm_response == "SUMMARY_NOT_FOUND":
-            print(Fore.YELLOW + "Could not find summary for this article." + Style.RESET_ALL)
+        try:
+            # Enable web search for the model - try different parameters
+            response = self.client.chat.completions.create(
+                model=search_model,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt}
+                ],
+                extra_body={
+                    "enable_web_search": True,
+                    "force_crawl": True
+                }
+            )
+            
+            print(Fore.CYAN + f"Response received. Status: {response}" + Style.RESET_ALL)
+            print(Fore.CYAN + f"Response choices count: {len(response.choices)}" + Style.RESET_ALL)
+
+            if not response.choices:
+                print(Fore.RED + "Error: No response choices found." + Style.RESET_ALL)
+                return None
+
+            llm_response = response.choices[0].message.content.strip()
+            
+            print(Fore.CYAN + f"LLM Raw Response: {llm_response}" + Style.RESET_ALL)
+            
+            # Check if response indicates not found
+            if llm_response == "SUMMARY_NOT_FOUND":
+                print(Fore.YELLOW + "LLM returned: SUMMARY_NOT_FOUND" + Style.RESET_ALL)
+                return None
+            
+            # Check for various "not found" patterns
+            lower_response = llm_response.lower()
+            not_found_patterns = ["could not find", "cannot find", "not found", "no information", 
+                                  "does not appear", "unable to find", "search failed", 
+                                  "no results", "i cannot find", "i could not find"]
+            if any(pattern in lower_response for pattern in not_found_patterns):
+                print(Fore.YELLOW + f"LLM indicates article not found in search results." + Style.RESET_ALL)
+                return None
+            
+            if not llm_response or len(llm_response.strip()) == 0:
+                print(Fore.YELLOW + "LLM returned empty response." + Style.RESET_ALL)
+                return None
+            
+            print(Fore.GREEN + "Article summary fetched successfully." + Style.RESET_ALL)
+            return llm_response
+            
+        except Exception as e:
+            print(Fore.RED + f"ERROR during LLM call: {type(e).__name__}: {e}" + Style.RESET_ALL)
+            import traceback
+            print(Fore.RED + f"Traceback: {traceback.format_exc()}" + Style.RESET_ALL)
             return None
-        
-        print(Fore.GREEN + "Article summary fetched successfully." + Style.RESET_ALL)
-        return llm_response
