@@ -106,12 +106,15 @@ class LLMAnalyzer:
         llm_response = response.choices[0].message.content.strip()
         return llm_response
 
+    # Fixed model for web search - supports internet search
+    WEB_SEARCH_MODEL = "openai/gpt-5-mini"
+
     def fetch_article_summary(self, article_title: str, model_name: str | None = None) -> str | None:
         """Fetch a summary of the article from the internet using the LLM.
         
         Args:
             article_title: The title of the article to summarize
-            model_name: Optional model name to use
+            model_name: Optional model name to use (ignored for web search, uses fixed model)
             
         Returns:
             The summary text, or None if not found
@@ -121,11 +124,9 @@ class LLMAnalyzer:
         
         print(Fore.CYAN + f"Fetching article summary for: {article_title}" + Style.RESET_ALL)
         
-        # Use random model if none specified
-        if model_name is None:
-            model_name = self.get_random_model()
-        else:
-            print(Fore.CYAN + f"Using specified model: {model_name}" + Style.RESET_ALL)
+        # Use fixed model for web search
+        search_model = self.WEB_SEARCH_MODEL
+        print(Fore.CYAN + f"Using fixed model for web search: {search_model}" + Style.RESET_ALL)
 
         system_message = (
             "You are an expert assistant specialized in researching scientific articles."
@@ -133,7 +134,7 @@ class LLMAnalyzer:
         
         # Enable web search for the model
         response = self.client.chat.completions.create(
-            model=model_name,
+            model=search_model,
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": prompt}
