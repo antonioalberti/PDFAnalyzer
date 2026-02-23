@@ -105,3 +105,51 @@ class LLMAnalyzer:
 
         llm_response = response.choices[0].message.content.strip()
         return llm_response
+
+    def fetch_article_summary(self, article_title: str, model_name: str | None = None) -> str | None:
+        """Fetch a summary of the article from the internet using the LLM.
+        
+        Args:
+            article_title: The title of the article to summarize
+            model_name: Optional model name to use
+            
+        Returns:
+            The summary text, or None if not found
+        """
+        prompt_template = self.load_prompt("summary_prompt.txt")
+        prompt = prompt_template.replace("{article_title}", article_title)
+        
+        print(Fore.CYAN + f"Fetching article summary for: {article_title}" + Style.RESET_ALL)
+        
+        # Use random model if none specified
+        if model_name is None:
+            model_name = self.get_random_model()
+        else:
+            print(Fore.CYAN + f"Using specified model: {model_name}" + Style.RESET_ALL)
+
+        system_message = (
+            "You are an expert assistant specialized in researching scientific articles."
+        )
+        
+        # Enable web search for the model
+        response = self.client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt}
+            ],
+            extra_body={"enable_web_search": True}
+        )
+
+        if not response.choices:
+            print(Fore.RED + "Error: No response choices found." + Style.RESET_ALL)
+            return None
+
+        llm_response = response.choices[0].message.content.strip()
+        
+        if llm_response == "SUMMARY_NOT_FOUND":
+            print(Fore.YELLOW + "Could not find summary for this article." + Style.RESET_ALL)
+            return None
+        
+        print(Fore.GREEN + "Article summary fetched successfully." + Style.RESET_ALL)
+        return llm_response

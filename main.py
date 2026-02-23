@@ -28,6 +28,14 @@ FilteredOccurrencesByEnabler = Dict[str, List[FilteredOccurrence]]
 SignificantFileMap = Dict[str, Path]
 
 
+def extract_article_title_from_filename(file_path: Path) -> str:
+    """Extract the article title from the PDF filename.
+    
+    Removes the .pdf extension and returns the filename as the article title.
+    """
+    return file_path.stem
+
+
 def extract_extended_context(text: str, keyword_start: int, keyword_end: int) -> str:
     """Return the surrounding sentences for the keyword occurrence."""
 
@@ -223,10 +231,18 @@ def process_category(
     final_prompt_template: str,
     model_name: str | None,
     debug: bool,
+    article_summary: str | None = None,
 ) -> None:
     """Prepare prompts, call the LLM, and persist results for a single enabler."""
 
     print(Fore.CYAN + f"\n\n-------------> Processing category: {enabler}" + Style.RESET_ALL)
+
+    # Build the article summary section if available
+    article_summary_section = ""
+    if article_summary:
+        article_summary_section = (
+            f"ARTICLE SUMMARY (from internet search):\n{article_summary}\n\n"
+        )
 
     enablers_and_keywords_str = f"{enabler}:\n{', '.join(enabler_keywords)}\n\n"
 
@@ -243,6 +259,10 @@ def process_category(
     final_prompt_with_paragraphs = final_prompt.replace(
         "{significant_paragraphs}", significant_paragraphs_str
     )
+    
+    # Prepend article summary at the beginning of the prompt if available
+    if article_summary_section:
+        final_prompt_with_paragraphs = article_summary_section + final_prompt_with_paragraphs
 
     if debug:
         print(Fore.YELLOW + "\n    [DEBUG] Context being sent to LLM:" + Style.RESET_ALL)
@@ -347,6 +367,20 @@ def process_single_pdf(
         print(Fore.RED + "Small number of total matches... Unrepresentative source" + Style.RESET_ALL)
         return
 
+    # Fetch article summary from the internet using the PDF filename as the title
+    article_title = extract_article_title_from_filename(pdf_path)
+    print(Fore.CYAN + f"\n\n-------------> Fetching article summary from internet..." + Style.RESET_ALL)
+    article_summary = llm_analyzer.fetch_article_summary(article_title, effective_model)
+    
+    if article_summary:
+        print(Fore.GREEN + "Article summary obtained successfully." + Style.RESET_ALL)
+        # Save the article summary to a file for reference
+        summary_file = pdf_path.parent / f"{pdf_path.stem}_article_summary.txt"
+        summary_file.write_text(article_summary, encoding="utf-8")
+        print(Fore.GREEN + f"Saved article summary to {summary_file}" + Style.RESET_ALL)
+    else:
+        print(Fore.YELLOW + "Could not obtain article summary. Proceeding without it." + Style.RESET_ALL)
+
     final_prompt_template = llm_analyzer.load_prompt("final_prompt.txt")
 
     for category_index, enabler in enumerate(filtered_enabler_occurrences.keys(), start=1):
@@ -365,6 +399,7 @@ def process_single_pdf(
             final_prompt_template=final_prompt_template,
             model_name=effective_model,
             debug=debug,
+            article_summary=article_summary,
         )
 
 
