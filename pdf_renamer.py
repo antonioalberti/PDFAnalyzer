@@ -2,10 +2,18 @@ import argparse
 import html
 import os
 import re
+import shutil
 import sys
 from typing import List
 
 from PyPDF2 import PdfReader
+
+# Try to import pdfplumber for content extraction
+try:
+    import pdfplumber
+    PDFPLUMBER_AVAILABLE = True
+except ImportError:
+    PDFPLUMBER_AVAILABLE = False
 
 
 def iter_pdf_files(folder: str, recursive: bool) -> List[str]:
@@ -24,15 +32,129 @@ def iter_pdf_files(folder: str, recursive: bool) -> List[str]:
     return pdf_paths
 
 
+def extract_pdf_title_from_content(file_path: str) -> str | None:
+    """Extract the title from the first page of the PDF content.
+    
+    Looks for the largest text that appears to be a title (common patterns
+    in academic papers, articles, etc.)
+    """
+    if not PDFPLUMBER_AVAILABLE:
+        return None
+    
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            if len(pdf.pages) == 0:
+                return None
+            
+            first_page = pdf.pages[0]
+            text = first_page.extract_text()
+            if not text:
+                return None
+            
+            lines = text.split('\n')
+            # Filter out empty lines and very short lines (likely not titles)
+            candidates = [line.strip() for line in lines if len(line.strip()) > 10]
+            
+            if not candidates:
+                return None
+            
+            # Patterns that indicate a line is NOT a title
+            # Email addresses
+            email_pattern = re.compile(r'[\w\.-]+@[\w\.-]+\.\w+')
+            # URL patterns
+            url_pattern = re.compile(r'https?://|www\.')
+            # Common non-title prefixes
+            non_title_prefixes = ['abstract', 'introduction', 'keywords', 'doi:', 'http', 'university', 'department', 'college', 'school', 'author', 'date', 'volume', 'issue', 'page', 'received', 'accepted', 'published', 'copyright', 'journal', 'conference', 'proceedings', 'issn', 'isbn', 'thanks', 'acknowledgment']
+            # Patterns that look like affiliations (usually contain commas and parenthetical info)
+            affiliation_patterns = [',', 'department of', 'institute of', 'laboratory', 'lab ', ' center', 'centre for']
+            
+            best_title = None
+            best_score = 0
+            
+            for line in candidates:
+                line_lower = line.lower()
+                
+                # Skip lines with email addresses
+                if email_pattern.search(line):
+                    continue
+                    
+                # Skip lines with URLs
+                if url_pattern.search(line_lower):
+                    continue
+                
+                # Skip lines that start with common non-title prefixes
+                if any(line_lower.startswith(prefix) for prefix in non_title_prefixes):
+                    continue
+                
+                # Skip lines that look like affiliations (contain department/university info)
+                if any(pattern in line_lower for pattern in affiliation_patterns):
+                    # But allow if it looks more like a title (has more words, less parenthetical content)
+                    if '(' in line and ')' in line:
+                        # Has parenthetical content - likely affiliation
+                        continue
+                
+                # Skip lines that are mostly numbers or very short in content
+                words = line.split()
+                if len(words) < 3:
+                    continue
+                
+                # Check if line has mixed case (typical of titles)
+                # Count uppercase words vs total words
+                upper_words = sum(1 for w in words if w.isupper() and len(w) > 1)
+                if upper_words > len(words) * 0.5 and not line[0].isupper():
+                    # Too many uppercase words but doesn't start with capital
+                    continue
+                
+                # Score based on length - prefer lines that look like titles
+                # (not too long, not too short, have proper case)
+                score = len(line)
+                
+                # Bonus for having proper title case (capitalized words)
+                title_case_words = sum(1 for w in words if w and w[0].isupper())
+                if title_case_words > len(words) * 0.7:
+                    score *= 1.2
+                
+                # Penalize lines that are all uppercase
+                if line.isupper():
+                    score *= 0.5
+                
+                # Penalize very long lines (likely not titles)
+                if len(line) > 200:
+                    score *= 0.7
+                
+                if score > best_score:
+                    best_score = score
+                    best_title = line
+            
+            if best_title and best_score > 20:  # Minimum threshold
+                return normalize_title(best_title)
+                
+    except Exception as e:
+        print(f"Could not extract title from content for {file_path}: {e}", file=sys.stderr)
+    
+    return None
+
+
 def extract_pdf_title(file_path: str) -> str | None:
-    """Extract the title from PDF metadata."""
+    """Extract the title from PDF metadata or content."""
+    # First try to get title from metadata
     try:
         reader = PdfReader(file_path)
         meta = reader.metadata
         if meta and meta.title:
-            return normalize_title(meta.title)
+            title = normalize_title(meta.title)
+            # Check if the title is meaningful (not just garbage)
+            if title and len(title) > 3 and not title.startswith('/'):
+                return title
     except Exception as e:
         print(f"Could not read metadata from {file_path}: {e}", file=sys.stderr)
+    
+    # If metadata doesn't have a good title, try to extract from content
+    title_from_content = extract_pdf_title_from_content(file_path)
+    if title_from_content:
+        print(f"No metadata title for '{os.path.basename(file_path)}'; extracted title from content.")
+        return title_from_content
+    
     return None
 
 
@@ -102,16 +224,25 @@ def rename_pdf_with_title(file_path: str, dry_run: bool = False) -> None:
         return
 
     new_filepath = os.path.join(directory, new_filename)
-    counter = 1
-    while os.path.exists(new_filepath):
-        new_filename = f"{new_filename_base} ({counter}).pdf"
-        new_filepath = os.path.join(directory, new_filename)
-        counter += 1
+    
+    # If the target file already exists and is different from the source, we need to handle it
+    if os.path.exists(new_filepath) and os.path.abspath(new_filepath) != os.path.abspath(file_path):
+        # Remove the existing file first, then we can move the source file
+        print(f"Target file '{new_filename}' already exists. Removing old file and overwriting.")
+        try:
+            os.remove(new_filepath)
+        except OSError as e:
+            print(f"Error removing existing file '{new_filename}': {e}", file=sys.stderr)
+            return
+    elif os.path.exists(new_filepath) and os.path.abspath(new_filepath) == os.path.abspath(file_path):
+        # Same file (e.g., case difference on case-insensitive filesystem)
+        print(f"'{old_filename}' is already named correctly. Skipping.")
+        return
 
     print(f"Renaming '{old_filename}' -> '{new_filename}'")
     if not dry_run:
         try:
-            os.rename(file_path, new_filepath)
+            shutil.move(file_path, new_filepath)
         except OSError as e:
             print(f"Error renaming '{old_filename}': {e}", file=sys.stderr)
 
