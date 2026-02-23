@@ -107,7 +107,7 @@ class LLMAnalyzer:
         return llm_response
 
     # Fixed model for web search - supports internet search
-    WEB_SEARCH_MODEL = "openai/gpt-5-mini"
+    WEB_SEARCH_MODEL = "openai/gpt-5-chat"
 
     def fetch_article_summary(self, article_title: str, model_name: str | None = None) -> str | None:
         """Fetch a summary of the article from the internet using the LLM.
