@@ -1,3 +1,5 @@
+Answer in English.
+
 Input Data: [Enabler Description, Keyword, and Passage]
 
 Evaluate if a Keyword is "significant" or "not significant" relative to a provided Enabler Description based on a 3-sentence Passage.
@@ -13,4 +15,8 @@ Criteria for "not significant":
 
 The Passages that do not link the Keyword to the Enabler Description. 
 
-Answer in English.
+Consider non-significant sentences that merely summarize or describe other research, literature reviews, or related works. These usually contain citation brackets like [X] or (Author, Year) as the main subject of the sentence (e.g., "[5] demonstrated that...", or "Previous works [1, 2] have shown..."). 
+
+Before classifying a statement as significant, ask yourself: "Is this statement describing the findings/methods of the PDF under analysis, or is it summarizing an external reference?" If it is summarizing an external reference, mark it as "non-significant".
+
+
