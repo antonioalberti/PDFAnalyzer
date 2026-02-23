@@ -188,6 +188,15 @@ def main():
             results_summary[pdf_name] = keyword_counts_per_category
             
             pdf_elapsed = time.time() - pdf_start_time
+            
+            # Show category counts for this PDF
+            print(f"\n  Category Results for {pdf_name}:")
+            print(f"  {'-' * 40}")
+            for cat_name, count in keyword_counts_per_category.items():
+                if count > 0:
+                    print(f"    {cat_name}: {count}")
+            print(f"  {'-' * 40}")
+            
             if not found_any:
                 summary.write("No keywords found in this PDF.\n")
                 print(f"  -> Finished: No keywords found | Time: {pdf_elapsed:.1f}s")
