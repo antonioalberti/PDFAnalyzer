@@ -452,6 +452,27 @@ def process_single_pdf(
         combined_results_file = pdf_path.parent / f"{pdf_path.stem}_all_category_results.txt"
         combined_results_file.write_text("\n\n".join(all_results), encoding="utf-8")
         print(Fore.GREEN + f"\nSaved all category results to {combined_results_file}" + Style.RESET_ALL)
+        
+        # Extract notes and save to separate file
+        notes_lines = []
+        for result in all_results:
+            # Look for "NOTE: X" pattern at the end of each result
+            lines = result.split('\n')
+            for i, line in enumerate(lines):
+                if line.strip().startswith('NOTE:'):
+                    # Get the category name from the result
+                    for l in lines:
+                        if l.startswith('-------------> Processing category'):
+                            # Extract category number and name
+                            cat_info = l.replace('-------------> Processing category ', '').strip()
+                            notes_lines.append(f"{cat_info}: {line.strip()}")
+                            break
+                    break
+        
+        if notes_lines:
+            notes_file = pdf_path.parent / f"{pdf_path.stem}_all_category_notes.txt"
+            notes_file.write_text("\n".join(notes_lines), encoding="utf-8")
+            print(Fore.GREEN + f"Saved category notes to {notes_file}" + Style.RESET_ALL)
     
     # Print token usage summary and save to file
     cost_file = pdf_path.parent / f"{pdf_path.stem}_cost.txt"

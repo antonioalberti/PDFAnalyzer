@@ -27,39 +27,39 @@ class LLMAnalyzer:
         self.total_completion_tokens = 0
         self.total_cost = 0.0  # in USD
         
-        # Model pricing (USD per 1M tokens) - update these values as needed
+        # Model pricing (USD per 1M tokens) - updated with correct prices
         self.model_pricing = {
             # Qwen models
-            "qwen/qwen-turbo": {"prompt": 0.00005, "completion": 0.0002},
-            "qwen/qwen-plus": {"prompt": 0.0004, "completion": 0.0012},
-            "qwen/qwen-max": {"prompt": 0.0016, "completion": 0.0064},
-            "qwen/qwen2.5-coder-7b-instruct": {"prompt": 0.00003, "completion": 0.00009},
+            "qwen/qwen-turbo": {"prompt": 0.04, "completion": 0.16},
+            "qwen/qwen-plus": {"prompt": 0.40, "completion": 1.20},
+            "qwen/qwen-max": {"prompt": 1.60, "completion": 6.40},
+            "qwen/qwen2.5-coder-7b-instruct": {"prompt": 0.03, "completion": 0.09},
             # Google models
-            "google/gemini-2.0-flash-lite-001": {"prompt": 0.000075, "completion": 0.0003},
-            "google/gemini-2.0-flash-001": {"prompt": 0.0001, "completion": 0.0004},
-            "google/gemini-3-flash-preview": {"prompt": 0.0001, "completion": 0.0005},
-            "google/gemma-3-4b-it": {"prompt": 0.00004, "completion": 0.00008},
-            "google/gemma-3-12b-it": {"prompt": 0.00004, "completion": 0.00013},
-            "google/gemma-2-9b-it": {"prompt": 0.00003, "completion": 0.00009},
+            "google/gemini-2.0-flash-lite-001": {"prompt": 0.075, "completion": 0.30},
+            "google/gemini-2.0-flash-001": {"prompt": 0.10, "completion": 0.40},
+            "google/gemini-3-flash-preview": {"prompt": 0.10, "completion": 0.50},
+            "google/gemma-3-4b-it": {"prompt": 0.04, "completion": 0.08},
+            "google/gemma-3-12b-it": {"prompt": 0.04, "completion": 0.13},
+            "google/gemma-2-9b-it": {"prompt": 0.03, "completion": 0.09},
             # OpenAI models
-            "openai/gpt-4.1-nano": {"prompt": 0.0001, "completion": 0.0004},
-            "openai/gpt-4.1-mini": {"prompt": 0.0004, "completion": 0.0016},
-            "openai/gpt-4.1": {"prompt": 0.002, "completion": 0.008},
-            "openai/gpt-4o-mini": {"prompt": 0.00015, "completion": 0.0006},
-            "openai/gpt-4o": {"prompt": 0.0025, "completion": 0.01},
-            "openai/gpt-5-nano": {"prompt": 0.00005, "completion": 0.0004},
-            "openai/gpt-5-mini": {"prompt": 0.00005, "completion": 0.0004},
+            "openai/gpt-4.1-nano": {"prompt": 0.10, "completion": 0.40},
+            "openai/gpt-4.1-mini": {"prompt": 0.40, "completion": 1.60},
+            "openai/gpt-4.1": {"prompt": 2.00, "completion": 8.00},
+            "openai/gpt-4o-mini": {"prompt": 0.15, "completion": 0.60},
+            "openai/gpt-4o": {"prompt": 2.50, "completion": 10.00},
+            "openai/gpt-5-nano": {"prompt": 0.05, "completion": 0.40},
+            "openai/gpt-5-mini": {"prompt": 0.05, "completion": 0.40},
             # xAI models
-            "x-ai/grok-4-fast": {"prompt": 0.0002, "completion": 0.0005},
-            "x-ai/grok-4.1-fast": {"prompt": 0.0002, "completion": 0.0005},
-            "x-ai/grok-4": {"prompt": 0.003, "completion": 0.015},
+            "x-ai/grok-4-fast": {"prompt": 0.20, "completion": 0.50},
+            "x-ai/grok-4.1-fast": {"prompt": 0.20, "completion": 0.50},
+            "x-ai/grok-4": {"prompt": 3.00, "completion": 15.00},
             # Meta/Llama models
-            "meta-llama/llama-3.1-8b-instruct": {"prompt": 0.00002, "completion": 0.00005},
-            "meta-llama/llama-3-8b-instruct": {"prompt": 0.00003, "completion": 0.00004},
-            "meta-llama/llama-3.2-3b-instruct": {"prompt": 0.00002, "completion": 0.00002},
+            "meta-llama/llama-3.1-8b-instruct": {"prompt": 0.02, "completion": 0.05},
+            "meta-llama/llama-3-8b-instruct": {"prompt": 0.03, "completion": 0.04},
+            "meta-llama/llama-3.2-3b-instruct": {"prompt": 0.02, "completion": 0.02},
             # Anthropic models
-            "anthropic/claude-3-haiku": {"prompt": 0.00025, "completion": 0.00125},
-            "anthropic/claude-3.5-sonnet": {"prompt": 0.006, "completion": 0.03},
+            "anthropic/claude-3-haiku": {"prompt": 0.25, "completion": 1.25},
+            "anthropic/claude-3.5-sonnet": {"prompt": 6.00, "completion": 30.00},
         }
     
     def _get_model_price(self, model_name: str) -> tuple[float, float]:
@@ -70,7 +70,7 @@ class LLMAnalyzer:
                 return prices["prompt"], prices["completion"]
         # Default prices if model not found - use a reasonable estimate
         print(Fore.YELLOW + f"Warning: No pricing found for model '{model_name}', using default estimate." + Style.RESET_ALL)
-        return 0.0001, 0.0004
+        return 0.10, 0.40
     
     def _track_usage(self, model_name: str, usage: dict):
         """Track token usage and cost from API response."""
@@ -82,11 +82,6 @@ class LLMAnalyzer:
         prompt_cost = (prompt_tokens / 1_000_000) * prompt_price
         completion_cost = (completion_tokens / 1_000_000) * completion_price
         total_call_cost = prompt_cost + completion_cost
-        
-        # Debug output
-        print(Fore.YELLOW + f"[DEBUG] Model: {model_name}, Prompt tokens: {prompt_tokens}, Completion tokens: {completion_tokens}")
-        print(Fore.YELLOW + f"[DEBUG] Prompt price: ${prompt_price}, Completion price: ${completion_price}")
-        print(Fore.YELLOW + f"[DEBUG] Prompt cost: ${prompt_cost}, Completion cost: ${completion_cost}, Total: ${total_call_cost}")
         
         self.total_prompt_tokens += prompt_tokens
         self.total_completion_tokens += completion_tokens
@@ -236,12 +231,12 @@ class LLMAnalyzer:
     # List of models that support web search - tried in order of cost-effectiveness
     # Sorted by price (cheapest first)
     WEB_SEARCH_MODELS = [
-        "qwen/qwen-turbo",              # $0.00005/1M
-        "google/gemini-2.0-flash-lite-001",  # $0.000075/1M
-        "openai/gpt-4.1-nano",          # $0.0001/1M
-        "google/gemini-2.0-flash-001",  # $0.0001/1M
-        "openai/gpt-4o-mini",           # $0.00015/1M
-        "x-ai/grok-4-fast",             # $0.0002/1M
+        "qwen/qwen-turbo",              # $0.04/1M prompt
+        "google/gemini-2.0-flash-lite-001",  # $0.075/1M prompt
+        "openai/gpt-4.1-nano",          # $0.10/1M prompt
+        "google/gemini-2.0-flash-001",  # $0.10/1M prompt
+        "openai/gpt-4o-mini",           # $0.15/1M prompt
+        "x-ai/grok-4-fast",             # $0.20/1M prompt
     ]
 
     def fetch_article_summary(self, article_title: str, model_name: str | None = None) -> str | None:
