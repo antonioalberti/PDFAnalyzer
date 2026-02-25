@@ -29,27 +29,47 @@ class LLMAnalyzer:
         
         # Model pricing (USD per 1M tokens) - update these values as needed
         self.model_pricing = {
+            # Qwen models
             "qwen/qwen-turbo": {"prompt": 0.00005, "completion": 0.0002},
+            "qwen/qwen-plus": {"prompt": 0.0004, "completion": 0.0012},
+            "qwen/qwen-max": {"prompt": 0.0016, "completion": 0.0064},
+            "qwen/qwen2.5-coder-7b-instruct": {"prompt": 0.00003, "completion": 0.00009},
+            # Google models
             "google/gemini-2.0-flash-lite-001": {"prompt": 0.000075, "completion": 0.0003},
             "google/gemini-2.0-flash-001": {"prompt": 0.0001, "completion": 0.0004},
             "google/gemini-3-flash-preview": {"prompt": 0.0001, "completion": 0.0005},
+            "google/gemma-3-4b-it": {"prompt": 0.00004, "completion": 0.00008},
+            "google/gemma-3-12b-it": {"prompt": 0.00004, "completion": 0.00013},
+            "google/gemma-2-9b-it": {"prompt": 0.00003, "completion": 0.00009},
+            # OpenAI models
             "openai/gpt-4.1-nano": {"prompt": 0.0001, "completion": 0.0004},
             "openai/gpt-4.1-mini": {"prompt": 0.0004, "completion": 0.0016},
+            "openai/gpt-4.1": {"prompt": 0.002, "completion": 0.008},
             "openai/gpt-4o-mini": {"prompt": 0.00015, "completion": 0.0006},
             "openai/gpt-4o": {"prompt": 0.0025, "completion": 0.01},
+            "openai/gpt-5-nano": {"prompt": 0.00005, "completion": 0.0004},
+            "openai/gpt-5-mini": {"prompt": 0.00005, "completion": 0.0004},
+            # xAI models
             "x-ai/grok-4-fast": {"prompt": 0.0002, "completion": 0.0005},
+            "x-ai/grok-4.1-fast": {"prompt": 0.0002, "completion": 0.0005},
             "x-ai/grok-4": {"prompt": 0.003, "completion": 0.015},
+            # Meta/Llama models
             "meta-llama/llama-3.1-8b-instruct": {"prompt": 0.00002, "completion": 0.00005},
-            "google/gemma-3-4b-it": {"prompt": 0.00004, "completion": 0.00008},
+            "meta-llama/llama-3-8b-instruct": {"prompt": 0.00003, "completion": 0.00004},
+            "meta-llama/llama-3.2-3b-instruct": {"prompt": 0.00002, "completion": 0.00002},
+            # Anthropic models
             "anthropic/claude-3-haiku": {"prompt": 0.00025, "completion": 0.00125},
+            "anthropic/claude-3.5-sonnet": {"prompt": 0.006, "completion": 0.03},
         }
     
     def _get_model_price(self, model_name: str) -> tuple[float, float]:
         """Get prompt and completion prices for a model."""
+        model_lower = model_name.lower()
         for key, prices in self.model_pricing.items():
-            if key in model_name.lower():
+            if key in model_lower:
                 return prices["prompt"], prices["completion"]
-        # Default prices if model not found
+        # Default prices if model not found - use a reasonable estimate
+        print(Fore.YELLOW + f"Warning: No pricing found for model '{model_name}', using default estimate." + Style.RESET_ALL)
         return 0.0001, 0.0004
     
     def _track_usage(self, model_name: str, usage: dict):
