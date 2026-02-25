@@ -83,6 +83,11 @@ class LLMAnalyzer:
         completion_cost = (completion_tokens / 1_000_000) * completion_price
         total_call_cost = prompt_cost + completion_cost
         
+        # Debug output
+        print(Fore.YELLOW + f"[DEBUG] Model: {model_name}, Prompt tokens: {prompt_tokens}, Completion tokens: {completion_tokens}")
+        print(Fore.YELLOW + f"[DEBUG] Prompt price: ${prompt_price}, Completion price: ${completion_price}")
+        print(Fore.YELLOW + f"[DEBUG] Prompt cost: ${prompt_cost}, Completion cost: ${completion_cost}, Total: ${total_call_cost}")
+        
         self.total_prompt_tokens += prompt_tokens
         self.total_completion_tokens += completion_tokens
         self.total_cost += total_call_cost
@@ -106,7 +111,11 @@ class LLMAnalyzer:
         print(f"Prompt tokens:     {summary['prompt_tokens']:,}")
         print(f"Completion tokens: {summary['completion_tokens']:,}")
         print(f"Total tokens:      {summary['total_tokens']:,}")
-        print(Fore.GREEN + f"Total cost:        ${summary['total_cost_usd']:.4f} USD")
+        # Use more decimal places for small costs
+        if summary['total_cost_usd'] < 0.0001:
+            print(Fore.GREEN + f"Total cost:        ${summary['total_cost_usd']:.6f} USD")
+        else:
+            print(Fore.GREEN + f"Total cost:        ${summary['total_cost_usd']:.4f} USD")
         print(Fore.CYAN + "="*60 + Style.RESET_ALL)
 
     def _load_models(self, models_file):
