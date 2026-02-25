@@ -123,6 +123,7 @@ def analyze_occurrences(
     model_name: str | None,
     debug: bool,
     significant_files: SignificantFileMap | None = None,
+    total_occurrences: int | None = None,
 ) -> FilteredOccurrencesByEnabler:
     """Filter occurrences using the LLM to keep only significant mentions."""
 
@@ -132,6 +133,9 @@ def analyze_occurrences(
     seen_paragraphs: Dict[str, set[str]] = {
         enabler: set() for enabler in enabler_occurrences
     }
+
+    # Counter for tracking progress
+    current_occurrence = 0
 
     for category_index, (enabler, occurrences) in enumerate(enabler_occurrences.items(), start=1):
         print(
@@ -144,9 +148,13 @@ def analyze_occurrences(
             occurrences,
             start=1,
         ):
+            current_occurrence += 1
+            # Format total with leading zeros for better alignment
+            total_str = str(total_occurrences) if total_occurrences else "?"
+            current_str = str(current_occurrence).zfill(len(total_str))
             print(
                 Fore.MAGENTA
-                + f"\n\n-----> Occurrence {occurrence_index}: Keyword '{keyword}' on page {page_num}"
+                + f"\n\n-----> Occurrence {current_str}/{total_str}: Keyword '{keyword}' on page {page_num}"
                 + Style.RESET_ALL
             )
             extended_context = extract_extended_context(
@@ -340,6 +348,7 @@ def process_single_pdf(
         effective_model,
         debug,
         significant_files,
+        total_occurrences,
     )
 
     total_matches_summary = print_occurrences(filtered_enabler_occurrences)

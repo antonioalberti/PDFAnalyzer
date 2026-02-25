@@ -106,11 +106,8 @@ class LLMAnalyzer:
         """Print token usage summary to console and optionally save to file."""
         summary = self.get_usage_summary()
         
-        # Format cost string
-        if summary['total_cost_usd'] < 0.0001:
-            cost_str = f"${summary['total_cost_usd']:.6f} USD"
-        else:
-            cost_str = f"${summary['total_cost_usd']:.4f} USD"
+        # Format cost string - always show at least 4 decimal places
+        cost_str = f"${summary['total_cost_usd']:.6f} USD"
         
         # Print to console
         print(Fore.CYAN + "\n" + "="*60)
