@@ -443,6 +443,9 @@ def process_single_pdf(
         combined_results_file = pdf_path.parent / f"{pdf_path.stem}_all_category_results.txt"
         combined_results_file.write_text("\n\n".join(all_results), encoding="utf-8")
         print(Fore.GREEN + f"\nSaved all category results to {combined_results_file}" + Style.RESET_ALL)
+    
+    # Print token usage summary
+    llm_analyzer.print_usage_summary()
 
 
 def parse_arguments() -> argparse.Namespace:
