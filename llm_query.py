@@ -102,21 +102,40 @@ class LLMAnalyzer:
             "total_cost_usd": self.total_cost
         }
     
-    def print_usage_summary(self):
-        """Print token usage summary to console."""
+    def print_usage_summary(self, output_file=None):
+        """Print token usage summary to console and optionally save to file."""
         summary = self.get_usage_summary()
+        
+        # Format cost string
+        if summary['total_cost_usd'] < 0.0001:
+            cost_str = f"${summary['total_cost_usd']:.6f} USD"
+        else:
+            cost_str = f"${summary['total_cost_usd']:.4f} USD"
+        
+        # Print to console
         print(Fore.CYAN + "\n" + "="*60)
         print(Fore.CYAN + "TOKEN USAGE SUMMARY")
         print(Fore.CYAN + "="*60)
         print(f"Prompt tokens:     {summary['prompt_tokens']:,}")
         print(f"Completion tokens: {summary['completion_tokens']:,}")
         print(f"Total tokens:      {summary['total_tokens']:,}")
-        # Use more decimal places for small costs
-        if summary['total_cost_usd'] < 0.0001:
-            print(Fore.GREEN + f"Total cost:        ${summary['total_cost_usd']:.6f} USD")
-        else:
-            print(Fore.GREEN + f"Total cost:        ${summary['total_cost_usd']:.4f} USD")
+        print(Fore.GREEN + f"Total cost:        {cost_str}")
         print(Fore.CYAN + "="*60 + Style.RESET_ALL)
+        
+        # Save to file if path provided
+        if output_file:
+            try:
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    f.write("TOKEN USAGE SUMMARY\n")
+                    f.write("="*60 + "\n")
+                    f.write(f"Prompt tokens:     {summary['prompt_tokens']:,}\n")
+                    f.write(f"Completion tokens: {summary['completion_tokens']:,}\n")
+                    f.write(f"Total tokens:      {summary['total_tokens']:,}\n")
+                    f.write(f"Total cost:        {cost_str}\n")
+                    f.write("="*60 + "\n")
+                print(Fore.GREEN + f"Saved cost summary to {output_file}" + Style.RESET_ALL)
+            except Exception as e:
+                print(Fore.RED + f"Error saving cost summary: {e}" + Style.RESET_ALL)
 
     def _load_models(self, models_file):
         """Load model names from a text file, ignoring comments and empty lines."""
