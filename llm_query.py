@@ -108,8 +108,9 @@ class LLMAnalyzer:
         return llm_response
 
     # Fixed model for web search - supports internet search via direct prompt
-    # Using openai/gpt-4o-mini which works with direct search prompts
-    WEB_SEARCH_MODEL = "openai/gpt-4o-mini"
+    # Using qwen/qwen-turbo - cheapest model with web search capability
+    # Price: $0.00005/1M (cheapest!)
+    WEB_SEARCH_MODEL = "qwen/qwen-turbo"
 
     def fetch_article_summary(self, article_title: str, model_name: str | None = None) -> str | None:
         """Fetch a summary of the article from the internet using the LLM.

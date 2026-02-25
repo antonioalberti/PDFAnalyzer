@@ -1,7 +1,19 @@
 # OpenRouter models for PDF analysis
-# Suitable for complex technical concepts like 6G, IoT, AI, etc.
+# Sorted by cost-effectiveness for simple classification tasks
+# (keyword_occurrence_prompt.txt - just "significant" or "not significant")
 # One model per line, lines starting with # are comments
 
+# Current working models
 google/gemini-3-flash-preview
 openai/gpt-5-mini
 x-ai/grok-4-fast
+qwen/qwen-turbo
+
+# Best cheap options for simple classification (priority order)
+#google/gemma-3-4b-it
+#qwen/qwen-turbo
+#meta-llama/llama-3.1-8b-instruct
+
+# Alternative cheap options
+#google/gemma-3-12b-it
+#qwen/qwen2.5-coder-7b-instruct

@@ -1,12 +1,11 @@
-You have the ability to search the web.
+Search the web for the article below. Check several sites.
 
 TASK: Find information about this scientific article:
 "{article_title}"
 
 Instructions:
-1. Use your web browsing/search capability to look up this article
-2. Provide a summary if you find it, or "SUMMARY_NOT_FOUND" if you cannot find any information
-3. Summary must be in English, a single large paragraph.
+1. Provide a summary if you find it, or "SUMMARY_NOT_FOUND" if you cannot find any information
+2. Summary must be in English, a single large paragraph.
 
 Response format:
 
