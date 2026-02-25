@@ -1,15 +1,15 @@
-You are an expert assistant specialized in researching scientific articles.
+You have the ability to search the web.
 
-TASK:
-The article being analyzed has the following title: "{article_title}"
+TASK: Find information about this scientific article:
+"{article_title}"
 
-IMPORTANT: You MUST search the internet for this article. Use your web search capability to find information about this paper.
+Instructions:
+1. Use your web browsing/search capability to look up this article
+2. Provide a summary if you find it, or "SUMMARY_NOT_FOUND" if you cannot find any information
+3. Summary must be in English, a single large paragraph.
 
-Provide a brief summary in English (2-3 paragraphs maximum) that includes:
-1. The main topic/focus of the article
-2. The key contributions or findings
-3. Any relevant context about the authors or publication
+Response format:
 
-If you cannot find ANY information about this article after searching the web, respond with EXACTLY "SUMMARY_NOT_FOUND".
+Title: {article_title}
 
-Provide only the summary or SUMMARY_NOT_FOUND, nothing else.
+Summary:

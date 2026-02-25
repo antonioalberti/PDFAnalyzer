@@ -374,33 +374,75 @@ def process_single_pdf(
     
     if article_summary:
         print(Fore.GREEN + "Article summary obtained successfully." + Style.RESET_ALL)
-        # Save the article summary to a file for reference
+        # Save the article summary to a file for reference (with title + summary)
         summary_file = pdf_path.parent / f"{pdf_path.stem}_article_summary.txt"
-        summary_file.write_text(article_summary, encoding="utf-8")
+        summary_content = f"{article_title}\n\n{article_summary}"
+        summary_file.write_text(summary_content, encoding="utf-8")
         print(Fore.GREEN + f"Saved article summary to {summary_file}" + Style.RESET_ALL)
     else:
         print(Fore.YELLOW + "Could not obtain article summary. Proceeding without it." + Style.RESET_ALL)
 
     final_prompt_template = llm_analyzer.load_prompt("final_prompt.txt")
 
+    # Collect all category results into a single file
+    all_results = []
+    
     for category_index, enabler in enumerate(filtered_enabler_occurrences.keys(), start=1):
         occurrences = filtered_enabler_occurrences[enabler]
         if not occurrences:
             continue
 
-        process_category(
-            enabler=enabler,
-            enabler_keywords=enabler_keywords[enabler],
-            occurrences=occurrences,
-            keyword_counter=classified_keywords.get(enabler, Counter()),
-            file_path=pdf_path,
-            category_index=category_index,
-            llm_analyzer=llm_analyzer,
-            final_prompt_template=final_prompt_template,
-            model_name=effective_model,
-            debug=debug,
-            article_summary=article_summary,
+        # Build the category analysis (same as process_category but collect result)
+        print(Fore.CYAN + f"\n\n-------------> Processing category {category_index}: {enabler}" + Style.RESET_ALL)
+
+        # Build the article summary section if available
+        article_summary_section = ""
+        if article_summary:
+            article_summary_section = (
+                f"ARTICLE SUMMARY (from internet search):\n{article_summary}\n\n"
+            )
+
+        enablers_and_keywords_str = f"{enabler}:\n{', '.join(enabler_keywords[enabler])}\n\n"
+
+        keyword_counts_lines = [f"{enabler}:"]
+        for keyword, count in classified_keywords.get(enabler, Counter()).items():
+            keyword_counts_lines.append(f"  {keyword}: {count}")
+        keyword_counts_str = "\n".join(keyword_counts_lines) + "\n\n"
+
+        category_paragraphs = [paragraph for _, _, paragraph in occurrences]
+        significant_paragraphs_str = "\n\n".join(category_paragraphs)
+
+        final_prompt = final_prompt_template.replace("{enablers_and_keywords}", enablers_and_keywords_str)
+        final_prompt = final_prompt.replace("{keyword_counts}", keyword_counts_str)
+        final_prompt_with_paragraphs = final_prompt.replace(
+            "{significant_paragraphs}", significant_paragraphs_str
         )
+        
+        # Prepend article summary at the beginning of the prompt if available
+        if article_summary_section:
+            final_prompt_with_paragraphs = article_summary_section + final_prompt_with_paragraphs
+
+        # Get the model used
+        selected_model = effective_model if effective_model else llm_analyzer.get_random_model()
+        
+        # Call LLM and collect output
+        analysis = llm_analyzer.analyze({}, final_prompt_with_paragraphs, None, selected_model)
+
+        # Format the output like the screen
+        category_output = (
+            f"-------------> Processing category {category_index}: {enabler}\n"
+            f"Selected model: {selected_model}\n\n"
+            f"LLM response:\n{analysis}\n"
+        )
+        all_results.append(category_output)
+        
+        print(Fore.GREEN + f"Category {category_index}: {enabler} analysis completed." + Style.RESET_ALL)
+
+    # Save all results to a single file
+    if all_results:
+        combined_results_file = pdf_path.parent / f"{pdf_path.stem}_all_category_results.txt"
+        combined_results_file.write_text("\n\n".join(all_results), encoding="utf-8")
+        print(Fore.GREEN + f"\nSaved all category results to {combined_results_file}" + Style.RESET_ALL)
 
 
 def parse_arguments() -> argparse.Namespace:

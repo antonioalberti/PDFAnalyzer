@@ -107,9 +107,9 @@ class LLMAnalyzer:
         llm_response = response.choices[0].message.content.strip()
         return llm_response
 
-    # Fixed model for web search - supports internet search
-    # Using openai/gpt-4o which has web search capability
-    WEB_SEARCH_MODEL = "openai/gpt-4o"
+    # Fixed model for web search - supports internet search via direct prompt
+    # Using openai/gpt-4o-mini which works with direct search prompts
+    WEB_SEARCH_MODEL = "openai/gpt-4o-mini"
 
     def fetch_article_summary(self, article_title: str, model_name: str | None = None) -> str | None:
         """Fetch a summary of the article from the internet using the LLM.
@@ -131,25 +131,20 @@ class LLMAnalyzer:
         print(Fore.CYAN + f"Using fixed model for web search: {search_model}" + Style.RESET_ALL)
 
         system_message = (
-            "You are an expert assistant specialized in researching scientific articles. "
-            "IMPORTANT: You must search the internet for information about this article. "
-            "Use your web search capability to find details about the paper."
+            "You are a research assistant with web browsing capabilities. "
+            "Always search the web when asked about articles or papers."
         )
         
         print(Fore.CYAN + "Calling LLM with web search enabled..." + Style.RESET_ALL)
         
         try:
-            # Enable web search for the model - try different parameters
+            # Use direct prompt without extra_body parameters (gpt-4o-mini responds to prompts)
             response = self.client.chat.completions.create(
                 model=search_model,
                 messages=[
                     {"role": "system", "content": system_message},
                     {"role": "user", "content": prompt}
-                ],
-                extra_body={
-                    "enable_web_search": True,
-                    "force_crawl": True
-                }
+                ]
             )
             
             print(Fore.CYAN + f"Response received. Status: {response}" + Style.RESET_ALL)
@@ -172,7 +167,8 @@ class LLMAnalyzer:
             lower_response = llm_response.lower()
             not_found_patterns = ["could not find", "cannot find", "not found", "no information", 
                                   "does not appear", "unable to find", "search failed", 
-                                  "no results", "i cannot find", "i could not find"]
+                                  "no results", "i cannot find", "i could not find",
+                                  "i couldn't find", "don't have information"]
             if any(pattern in lower_response for pattern in not_found_patterns):
                 print(Fore.YELLOW + f"LLM indicates article not found in search results." + Style.RESET_ALL)
                 return None
