@@ -295,7 +295,7 @@ def process_category(
 def process_single_pdf(
     file_path: Path | str,
     keywords_path: Path | str,
-    min_representative_matches: int = 100,
+    min_representative_matches: int = 1,
     model_name: str = "random",
     debug: bool = False,
 ) -> None:
@@ -508,7 +508,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--min-representative-matches",
         type=int,
-        default=100,
+        default=1,
         help="Minimum total matches to consider source representative",
     )
     parser.add_argument(
