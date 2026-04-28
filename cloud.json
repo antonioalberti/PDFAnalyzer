@@ -1,0 +1,79 @@
+{
+  "Interoperability and Multi-Cloud": [
+    "interoperability",
+    "multi-cloud",
+    "multi cloud",
+    "cross-cloud",
+    "portability",
+    "hybrid cloud",
+    "cloud federation",
+    "standardization",
+    "vendor lock-in"
+  ],
+  "Multi-Cloud and Federation Orchestration": [
+    "orchestration",
+    "cloud federation",
+    "intercloud",
+    "meta-cloud",
+    "cross-cloud management",
+    "resource allocation",
+    "distributed deployment",
+    "workload placement",
+    "automation"
+  ],
+  "Cloud Governance and Data Sovereignty": [
+    "governance",
+    "data sovereignty",
+    "compliance",
+    "policy",
+    "regulation",
+    "GDPR",
+    "auditing",
+    "data residency",
+    "risk management"
+  ],
+  "Identity and Access Management": [
+    "identity management",
+    "access management",
+    "IAM",
+    "authentication",
+    "authorization",
+    "RBAC",
+    "zero trust",
+    "single sign-on",
+    "federated identity"
+  ],
+  "Security and Privacy": [
+    "security",
+    "privacy",
+    "encryption",
+    "confidential computing",
+    "cybersecurity",
+    "threat modeling",
+    "vulnerability",
+    "intrusion detection",
+    "secure enclave"
+  ],
+  "Edge-to-Cloud Continuum": [
+    "edge computing",
+    "edge-to-cloud",
+    "fog computing",
+    "continuum",
+    "MEC",
+    "distributed cloud",
+    "edge intelligence",
+    "low latency",
+    "data offloading"
+  ],
+  "Federated Learning and Cloud AI": [
+    "federated learning",
+    "cloud AI",
+    "machine learning",
+    "artificial intelligence",
+    "distributed learning",
+    "model training",
+    "AI-as-a-Service",
+    "privacy-preserving ML",
+    "MLOps"
+  ]
+}

@@ -5,9 +5,9 @@
 
 # Current working models
 google/gemini-3-flash-preview
-openai/gpt-5-mini
-x-ai/grok-4-fast
-qwen/qwen-turbo
+#openai/gpt-5-mini
+#x-ai/grok-4-fast
+#qwen/qwen-turbo
 
 # Best cheap options for simple classification (priority order)
 #google/gemma-3-4b-it
