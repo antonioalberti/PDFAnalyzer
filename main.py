@@ -201,6 +201,70 @@ def analyze_occurrences(
     return filtered_enabler_occurrences
 
 
+def write_occurrences_summary(
+    pdf_path: Path,
+    enabler_keywords: EnablerKeywords,
+    enabler_occurrences: OccurrencesByEnabler,
+    filtered_enabler_occurrences: FilteredOccurrencesByEnabler,
+    classified_keywords: Dict[str, Counter],
+) -> None:
+    """Write a *_occurrences.txt file summarising raw and significant occurrences per category."""
+
+    sep = "=" * 70
+    thin = "-" * 70
+    lines: List[str] = [
+        sep,
+        f"OCCURRENCES SUMMARY: {pdf_path.name}",
+        sep,
+        "",
+        "CATEGORY OVERVIEW",
+        thin,
+    ]
+
+    total_found = 0
+    total_significant = 0
+
+    for cat_idx, (enabler, raw_occ) in enumerate(enabler_occurrences.items(), start=1):
+        found = len(raw_occ)
+        significant = len(filtered_enabler_occurrences.get(enabler, []))
+        total_found += found
+        total_significant += significant
+
+        lines.append(
+            f"Category {cat_idx}: {enabler}"
+        )
+        lines.append(f"  Occurrences found (before LLM filter):  {found:>5}")
+        lines.append(f"  Significant occurrences (after filter):  {significant:>5}")
+
+        kw_counter: Counter = classified_keywords.get(enabler, Counter())
+        if kw_counter:
+            lines.append("  Keyword counts (significant only):")
+            for kw, count in sorted(kw_counter.items(), key=lambda x: (-x[1], x[0])):
+                lines.append(f"    {kw}: {count}")
+        else:
+            # Show which keywords were searched even if none were significant
+            searched = enabler_keywords.get(enabler, [])
+            if searched:
+                lines.append(f"  Keywords searched: {', '.join(searched)}")
+            lines.append("  No significant occurrences.")
+        lines.append("")
+
+    lines += [
+        thin,
+        f"TOTALS",
+        f"  Total occurrences found (before LLM filter):  {total_found:>5}",
+        f"  Total significant occurrences (after filter): {total_significant:>5}",
+        sep,
+    ]
+
+    output_path = pdf_path.parent / f"{pdf_path.stem}_occurrences.txt"
+    try:
+        output_path.write_text("\n".join(lines), encoding="utf-8")
+        print(Fore.GREEN + f"Saved occurrences summary to {output_path}" + Style.RESET_ALL)
+    except OSError as exc:
+        print(Fore.RED + f"Warning: Failed to write occurrences summary: {exc}" + Style.RESET_ALL)
+
+
 def print_occurrences(enabler_occurrences: FilteredOccurrencesByEnabler) -> int:
     """Display filtered occurrences and return the total number of matches."""
 
@@ -359,6 +423,10 @@ def process_single_pdf(
             + "None relevant occurrences have been found in the file under analysis."
             + Style.RESET_ALL
         )
+        write_occurrences_summary(
+            pdf_path, enabler_keywords, enabler_occurrences,
+            filtered_enabler_occurrences, {},
+        )
         return
 
     classified_keywords = keyword_searcher.classify_keywords(filtered_enabler_occurrences)
@@ -374,6 +442,10 @@ def process_single_pdf(
 
     if total_matches_summary < min_representative_matches:
         print(Fore.RED + "Small number of total matches... Unrepresentative source" + Style.RESET_ALL)
+        write_occurrences_summary(
+            pdf_path, enabler_keywords, enabler_occurrences,
+            filtered_enabler_occurrences, classified_keywords,
+        )
         return
 
     # Fetch article summary from the internet using the PDF filename as the title
@@ -474,6 +546,12 @@ def process_single_pdf(
             notes_file.write_text("\n".join(notes_lines), encoding="utf-8")
             print(Fore.GREEN + f"Saved category notes to {notes_file}" + Style.RESET_ALL)
     
+    # Write occurrences summary
+    write_occurrences_summary(
+        pdf_path, enabler_keywords, enabler_occurrences,
+        filtered_enabler_occurrences, classified_keywords,
+    )
+
     # Print token usage summary and save to file
     cost_file = pdf_path.parent / f"{pdf_path.stem}_cost.txt"
     llm_analyzer.print_usage_summary(str(cost_file))

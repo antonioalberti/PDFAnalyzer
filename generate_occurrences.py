@@ -1,0 +1,217 @@
+"""generate_occurrences.py
+Post-processing script that generates ``*_occurrences.txt`` files for PDFs
+that have already been analysed by main.py.
+
+It reads the ``*_significant_paragraphs_category_N.txt`` files produced
+during analysis, re-runs the (free) keyword search on the extracted PDF
+text, and writes the occurrences summary — no LLM calls are made.
+
+Usage:
+    python generate_occurrences.py <source_folder> <keywords_json> [--start N] [--end N]
+
+Example:
+    python generate_occurrences.py /path/to/Standards cloud.json
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+from typing import Dict, List
+
+from colorama import Fore, Style, init
+
+init(autoreset=True)
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def load_keywords(keywords_path: Path) -> Dict[str, List[str]]:
+    with keywords_path.open("r", encoding="utf-8") as fh:
+        data = json.load(fh)
+    return {str(k): [str(w) for w in v] for k, v in data.items()}
+
+
+def count_raw_occurrences(pdf_text: str, keywords: List[str]) -> int:
+    """Count how many times ANY keyword from the list appears in the text (case-insensitive)."""
+    text_lower = pdf_text.lower()
+    total = 0
+    for kw in keywords:
+        start = 0
+        kw_lower = kw.lower()
+        while True:
+            pos = text_lower.find(kw_lower, start)
+            if pos == -1:
+                break
+            total += 1
+            start = pos + 1
+    return total
+
+
+def count_keyword_in_paragraphs(paragraphs: List[str], keywords: List[str]) -> Counter:
+    """For each significant paragraph, count how many times each keyword appears."""
+    counter: Counter = Counter()
+    for para in paragraphs:
+        para_lower = para.lower()
+        for kw in keywords:
+            kw_lower = kw.lower()
+            start = 0
+            while True:
+                pos = para_lower.find(kw_lower, start)
+                if pos == -1:
+                    break
+                counter[kw] += 1
+                start = pos + 1
+    return counter
+
+
+def read_significant_paragraphs(sig_file: Path) -> List[str]:
+    """Read significant paragraphs from file (separated by blank lines)."""
+    if not sig_file.exists():
+        return []
+    text = sig_file.read_text(encoding="utf-8", errors="replace")
+    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+    return paragraphs
+
+
+def generate_occurrences_file(
+    pdf_path: Path,
+    enabler_keywords: Dict[str, List[str]],
+    pdf_text: str,
+) -> None:
+    """Generate the *_occurrences.txt file for one PDF."""
+
+    sep = "=" * 70
+    thin = "-" * 70
+    lines: List[str] = [
+        sep,
+        f"OCCURRENCES SUMMARY: {pdf_path.name}",
+        sep,
+        "",
+        "CATEGORY OVERVIEW",
+        thin,
+    ]
+
+    total_found = 0
+    total_significant = 0
+
+    for cat_idx, (enabler, keywords) in enumerate(enabler_keywords.items(), start=1):
+        # Raw occurrences (keyword search, no LLM)
+        found = count_raw_occurrences(pdf_text, keywords)
+
+        # Significant occurrences — read from the file produced by main.py
+        sig_file = pdf_path.parent / f"{pdf_path.stem}_significant_paragraphs_category_{cat_idx}.txt"
+        sig_paragraphs = read_significant_paragraphs(sig_file)
+        significant = len(sig_paragraphs)
+
+        total_found += found
+        total_significant += significant
+
+        lines.append(f"Category {cat_idx}: {enabler}")
+        lines.append(f"  Occurrences found (before LLM filter):  {found:>5}")
+        lines.append(f"  Significant occurrences (after filter):  {significant:>5}")
+
+        if sig_paragraphs:
+            kw_counter = count_keyword_in_paragraphs(sig_paragraphs, keywords)
+            if kw_counter:
+                lines.append("  Keyword counts in significant paragraphs:")
+                for kw, count in sorted(kw_counter.items(), key=lambda x: (-x[1], x[0])):
+                    lines.append(f"    {kw}: {count}")
+            else:
+                lines.append(f"  Keywords searched: {', '.join(keywords)}")
+        else:
+            lines.append(f"  Keywords searched: {', '.join(keywords)}")
+            lines.append("  No significant occurrences.")
+        lines.append("")
+
+    lines += [
+        thin,
+        "TOTALS",
+        f"  Total occurrences found (before LLM filter):  {total_found:>5}",
+        f"  Total significant occurrences (after filter): {total_significant:>5}",
+        sep,
+    ]
+
+    output_path = pdf_path.parent / f"{pdf_path.stem}_occurrences.txt"
+    output_path.write_text("\n".join(lines), encoding="utf-8")
+    print(Fore.GREEN + f"Saved: {output_path}" + Style.RESET_ALL)
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate *_occurrences.txt files from already-analysed PDFs (no LLM calls)."
+    )
+    parser.add_argument("source_folder", help="Folder containing the PDF files.")
+    parser.add_argument("keywords_path", help="Path to the keywords JSON file.")
+    parser.add_argument("--start", type=int, default=0, help="Start index (0-based, inclusive).")
+    parser.add_argument("--end", type=int, default=None, help="End index (0-based, inclusive). Default: last file.")
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+
+    source_folder = Path(args.source_folder)
+    keywords_path = Path(args.keywords_path)
+
+    if not source_folder.is_dir():
+        print(Fore.RED + f"Error: folder not found: {source_folder}" + Style.RESET_ALL)
+        sys.exit(1)
+    if not keywords_path.is_file():
+        print(Fore.RED + f"Error: keywords file not found: {keywords_path}" + Style.RESET_ALL)
+        sys.exit(1)
+
+    enabler_keywords = load_keywords(keywords_path)
+    print(Fore.CYAN + f"Loaded {len(enabler_keywords)} enabler categories from {keywords_path.name}" + Style.RESET_ALL)
+
+    pdf_files = sorted(
+        [p for p in source_folder.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"],
+        key=lambda p: p.name.lower(),
+    )
+
+    if not pdf_files:
+        print(Fore.YELLOW + "No PDF files found." + Style.RESET_ALL)
+        sys.exit(0)
+
+    end_idx = args.end if args.end is not None else len(pdf_files) - 1
+    selected = pdf_files[args.start : end_idx + 1]
+
+    print(Fore.CYAN + f"Processing {len(selected)} PDF(s):" + Style.RESET_ALL)
+    for p in selected:
+        print(f"  {p.name}")
+
+    for pdf_path in selected:
+        print(Fore.BLUE + f"\n--- {pdf_path.name} ---" + Style.RESET_ALL)
+
+        # Use extracted text file if available (faster than re-parsing PDF)
+        txt_path = pdf_path.with_suffix(".txt")
+        if txt_path.exists():
+            pdf_text = txt_path.read_text(encoding="utf-8", errors="replace")
+            print(Fore.CYAN + f"  Using extracted text from {txt_path.name}" + Style.RESET_ALL)
+        else:
+            print(Fore.YELLOW + f"  No .txt file found; trying PDF extraction..." + Style.RESET_ALL)
+            try:
+                from PyPDF2 import PdfReader
+                reader = PdfReader(str(pdf_path))
+                pdf_text = "".join(
+                    (page.extract_text() or "") for page in reader.pages
+                )
+            except Exception as exc:
+                print(Fore.RED + f"  Failed to extract text: {exc}" + Style.RESET_ALL)
+                continue
+
+        generate_occurrences_file(pdf_path, enabler_keywords, pdf_text)
+
+    print(Fore.GREEN + "\nDone." + Style.RESET_ALL)
+
+
+if __name__ == "__main__":
+    main()
