@@ -91,6 +91,28 @@ def pct(found: int, significant: int) -> str:
     return f"{(significant / found) * 100:.1f}"
 
 
+def _wrap_table(tabular_lines: List[str], caption: str, label: str) -> List[str]:
+    """Wrap tabular content in a full table environment."""
+    return [
+        r"\begin{table}[h]",
+        r"    \centering",
+    ] + ["    " + line for line in tabular_lines] + [
+        f"    \\caption{{{caption}}}",
+        f"    \\label{{{label}}}",
+        r"\end{table}",
+        "",
+    ]
+
+
+def _cat_comments(category_names: List[str]) -> List[str]:
+    """Return category legend comments for LaTeX tables."""
+    return [f"% C{i+1}: {name}" for i, name in enumerate(category_names)]
+
+
+# ---------------------------------------------------------------------------
+# Per-PDF file generation
+# ---------------------------------------------------------------------------
+
 def generate_occurrences_file(
     pdf_path: Path,
     enabler_keywords: Dict[str, List[str]],
@@ -172,13 +194,13 @@ def generate_occurrences_file(
         thin,
     ]
 
-    # Build LaTeX row for this PDF
+    # Build LaTeX row for this PDF (no spaces around /)
     short_name = pdf_path.stem.replace("_", r"\_")
     cells = " & ".join(
-        f"{found} / {sig} ({pct(found, sig)}\\%)"
+        f"{found}/{sig} ({pct(found,sig)}\\%)"
         for found, sig in zip(raw_counts, sig_counts)
     )
-    latex_row = f"\\texttt{{{short_name}}} & {cells} & {total_found} / {total_significant} ({total_pct}\\%) \\\\"
+    latex_row = f"\\texttt{{{short_name}}} & {cells} & {total_found}/{total_significant} ({total_pct}\\%) \\"  # noqa: E501
     lines.append(latex_row)
     lines.append(sep)
 
@@ -189,6 +211,10 @@ def generate_occurrences_file(
     return raw_counts, sig_counts, kw_counters
 
 
+# ---------------------------------------------------------------------------
+# Combined LaTeX tables
+# ---------------------------------------------------------------------------
+
 def build_counts_table(
     pdf_names: List[str],
     all_raw: List[List[int]],
@@ -196,39 +222,41 @@ def build_counts_table(
     category_names: List[str],
     output_path: Path,
 ) -> None:
-    """Write a LaTeX table showing raw / significant counts per PDF."""
+    """Write a LaTeX table showing raw/significant counts per PDF."""
 
     n_cats = len(all_raw[0]) if all_raw else 0
     cols = "l" + "c" * n_cats + "c"
 
-    cat_legend = [f"% C{i+1}: {name}" for i, name in enumerate(category_names)]
-
-    lines: List[str] = [
-        r"% LaTeX table: OCCURRENCE COUNTS (Raw / Significant)",
-        r"% No extra packages required; uses standard \hline.",
-        r"",
-    ] + cat_legend + [
-        r"",
+    tabular: List[str] = [
         r"\begin{tabular}{" + cols + r"}",
-        r"\hline",
+        r"    \hline",
     ]
 
     cat_headers = [f"C{i+1}" for i in range(n_cats)]
     header = "PDF Document & " + " & ".join(cat_headers) + r" & Total \\"
-    lines.append(header)
-    lines.append(r"\hline")
+    tabular.append("    " + header)
+    tabular.append(r"    \hline")
 
     for name, raw_row, sig_row in zip(pdf_names, all_raw, all_sig):
         short_name = name.replace("_", r"\_")
-        cells = " & ".join(f"{found} / {sig}" for found, sig in zip(raw_row, sig_row))
+        cells = " & ".join(f"{found}/{sig}" for found, sig in zip(raw_row, sig_row))
         total_found = sum(raw_row)
         total_sig = sum(sig_row)
-        row = f"\\texttt{{{short_name}}} & {cells} & {total_found} / {total_sig} \\\\"
-        lines.append(row)
+        row = f"\\texttt{{{short_name}}} & {cells} & {total_found}/{total_sig} \\"  # noqa: E501
+        tabular.append("    " + row)
 
-    lines.append(r"\hline")
-    lines.append(r"\end{tabular}")
-    lines.append("")
+    tabular.append(r"    \hline")
+    tabular.append(r"\end{tabular}")
+
+    lines = (
+        _cat_comments(category_names)
+        + [""]
+        + _wrap_table(
+            tabular,
+            caption="Keyword occurrences found and significant per PDF and category.",
+            label="tab:occurrence-counts",
+        )
+    )
 
     output_path.write_text("\n".join(lines), encoding="utf-8")
     print(Fore.GREEN + f"Saved counts table: {output_path}" + Style.RESET_ALL)
@@ -246,22 +274,15 @@ def build_percentages_table(
     n_cats = len(all_raw[0]) if all_raw else 0
     cols = "l" + "c" * n_cats + "c"
 
-    cat_legend = [f"% C{i+1}: {name}" for i, name in enumerate(category_names)]
-
-    lines: List[str] = [
-        r"% LaTeX table: RELEVANCE PERCENTAGES",
-        r"% No extra packages required; uses standard \hline.",
-        r"",
-    ] + cat_legend + [
-        r"",
+    tabular: List[str] = [
         r"\begin{tabular}{" + cols + r"}",
-        r"\hline",
+        r"    \hline",
     ]
 
     cat_headers = [f"C{i+1}" for i in range(n_cats)]
     header = "PDF Document & " + " & ".join(cat_headers) + r" & Total \\"
-    lines.append(header)
-    lines.append(r"\hline")
+    tabular.append("    " + header)
+    tabular.append(r"    \hline")
 
     for name, raw_row, sig_row in zip(pdf_names, all_raw, all_sig):
         short_name = name.replace("_", r"\_")
@@ -269,12 +290,21 @@ def build_percentages_table(
         total_found = sum(raw_row)
         total_sig = sum(sig_row)
         total_p = pct(total_found, total_sig)
-        row = f"\\texttt{{{short_name}}} & {cells} & {total_p}\\% \\\\"
-        lines.append(row)
+        row = f"\\texttt{{{short_name}}} & {cells} & {total_p}\\% \\"  # noqa: E501
+        tabular.append("    " + row)
 
-    lines.append(r"\hline")
-    lines.append(r"\end{tabular}")
-    lines.append("")
+    tabular.append(r"    \hline")
+    tabular.append(r"\end{tabular}")
+
+    lines = (
+        _cat_comments(category_names)
+        + [""]
+        + _wrap_table(
+            tabular,
+            caption="Relevance rate of keyword occurrences per PDF and category.",
+            label="tab:occurrence-percentages",
+        )
+    )
 
     output_path.write_text("\n".join(lines), encoding="utf-8")
     print(Fore.GREEN + f"Saved percentages table: {output_path}" + Style.RESET_ALL)
@@ -292,16 +322,12 @@ def build_keyword_latex_table(
     n_pdfs = len(pdf_names)
 
     lines: List[str] = [
-        r"% LaTeX keyword-count tables generated by generate_occurrences.py",
-        r"% Each sub-table shows keyword occurrences in significant paragraphs.",
-        r"% No extra packages required; uses standard \hline.",
-        r"",
+        "% LaTeX keyword-count tables generated by generate_occurrences.py",
+        "% Each sub-table shows keyword occurrences in significant paragraphs.",
+        "",
     ]
 
     for cat_idx, cat_name in enumerate(category_names):
-        lines.append(f"% Category {cat_idx + 1}: {cat_name}")
-        lines.append(r"")
-
         # Collect all keywords that appear in at least one PDF for this category
         all_keywords: set[str] = set()
         for pdf_idx in range(n_pdfs):
@@ -309,20 +335,21 @@ def build_keyword_latex_table(
         sorted_keywords = sorted(all_keywords, key=lambda kw: kw.lower())
 
         if not sorted_keywords:
-            lines.append(f"% No significant keyword occurrences in this category.")
-            lines.append(r"")
+            lines.append(f"% Category {cat_idx + 1}: {cat_name} — no significant keyword occurrences.")
+            lines.append("")
             continue
 
-        # Build table: rows = keywords, cols = PDFs + Total
         cols = "l" + "r" * n_pdfs + "r"
-        lines.append(r"\begin{tabular}{" + cols + r"}")
-        lines.append(r"\hline")
+        tabular: List[str] = [
+            r"\begin{tabular}{" + cols + r"}",
+            r"    \hline",
+        ]
 
         # Header
         safe_names = [name.replace("_", r"\_") for name in pdf_names]
-        header = "Keyword & " + " & ".join(f"\\texttt{{{n}}}" for n in safe_names) + r" & Total \\"
-        lines.append(header)
-        lines.append(r"\hline")
+        header = "Keyword & " + " & ".join(f"\\texttt{{{n}}}" for n in safe_names) + r" & Total \\"  # noqa: E501
+        tabular.append("    " + header)
+        tabular.append(r"    \hline")
 
         # Data rows
         col_totals: List[int] = [0] * n_pdfs
@@ -336,18 +363,20 @@ def build_keyword_latex_table(
                 row_total += c
             safe_kw = kw.replace("_", r"\_").replace("%", r"\%").replace("&", r"\&")
             cells = " & ".join(str(c) for c in counts)
-            lines.append(f"{safe_kw} & {cells} & {row_total} \\\\")
+            tabular.append(f"    {safe_kw} & {cells} & {row_total} \\\\")
 
-        lines.append(r"\hline")
-        # Total row
+        tabular.append(r"    \hline")
         total_cells = " & ".join(str(t) for t in col_totals)
         grand_total = sum(col_totals)
-        lines.append(f"\\textbf{{Total}} & {total_cells} & {grand_total} \\\\")
-        lines.append(r"\hline")
-        lines.append(r"\end{tabular}")
-        lines.append(r"")
-        lines.append(r"\vspace{1em}")
-        lines.append(r"")
+        tabular.append(f"    \\textbf{{Total}} & {total_cells} & {grand_total} \\\\")
+        tabular.append(r"    \hline")
+        tabular.append(r"\end{tabular}")
+
+        lines += _wrap_table(
+            tabular,
+            caption=f"Keyword occurrences in significant paragraphs: {cat_name}.",
+            label=f"tab:keywords-cat{cat_idx + 1}",
+        )
 
     output_path.write_text("\n".join(lines), encoding="utf-8")
     print(Fore.GREEN + f"Saved keyword LaTeX table: {output_path}" + Style.RESET_ALL)

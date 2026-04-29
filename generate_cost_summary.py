@@ -111,6 +111,19 @@ def write_text_summary(
     print(Fore.GREEN + f"Saved text summary: {output_path}" + Style.RESET_ALL)
 
 
+def _wrap_table(tabular_lines: List[str], caption: str, label: str) -> List[str]:
+    """Wrap tabular content in a full table environment."""
+    return [
+        r"\begin{table}[h]",
+        r"    \centering",
+    ] + ["    " + line for line in tabular_lines] + [
+        f"    \\caption{{{caption}}}",
+        f"    \\label{{{label}}}",
+        r"\end{table}",
+        "",
+    ]
+
+
 def build_token_latex_table(
     pdf_stems: List[str],
     data: Dict[str, Dict[str, float | int]],
@@ -118,15 +131,11 @@ def build_token_latex_table(
 ) -> None:
     """Build a LaTeX table showing token usage per PDF."""
 
-    lines: List[str] = [
-        r"% LaTeX table: TOKEN USAGE per PDF",
-        r"% Paste inside a table environment.",
-        r"% No extra packages required; uses standard \hline.",
-        r"",
+    tabular: List[str] = [
         r"\begin{tabular}{lrrrr}",
-        r"\hline",
-        r"PDF Document & Prompt & Completion & Total & Calls \\",
-        r"\hline",
+        r"    \hline",
+        r"    PDF Document & Prompt & Completion & Total & Calls \\",
+        r"    \hline",
     ]
 
     total_prompt = 0
@@ -147,18 +156,22 @@ def build_token_latex_table(
         total_calls += calls
 
         safe = stem.replace("_", r"\_")
-        lines.append(
-            f"\\texttt{{{safe}}} & {prompt:,} & {completion:,} & {tokens:,} & {calls:,} \\\\"
+        tabular.append(
+            f"    \\texttt{{{safe}}} & {prompt:,} & {completion:,} & {tokens:,} & {calls:,} \\\\"
         )
 
-    lines.append(r"\hline")
-    safe_total = "TOTAL"
-    lines.append(
-        f"\\textbf{{{safe_total}}} & {total_prompt:,} & {total_completion:,} & {total_tokens:,} & {total_calls:,} \\\\"
+    tabular.append(r"    \hline")
+    tabular.append(
+        f"    \\textbf{{TOTAL}} & {total_prompt:,} & {total_completion:,} & {total_tokens:,} & {total_calls:,} \\\\"
     )
-    lines.append(r"\hline")
-    lines.append(r"\end{tabular}")
-    lines.append("")
+    tabular.append(r"    \hline")
+    tabular.append(r"\end{tabular}")
+
+    lines = _wrap_table(
+        tabular,
+        caption="Token usage per PDF document.",
+        label="tab:token-usage",
+    )
 
     output_path.write_text("\n".join(lines), encoding="utf-8")
     print(Fore.GREEN + f"Saved token LaTeX table: {output_path}" + Style.RESET_ALL)
@@ -171,15 +184,11 @@ def build_cost_latex_table(
 ) -> None:
     """Build a LaTeX table showing cost per PDF."""
 
-    lines: List[str] = [
-        r"% LaTeX table: COST per PDF",
-        r"% Paste inside a table environment.",
-        r"% No extra packages required; uses standard \hline.",
-        r"",
+    tabular: List[str] = [
         r"\begin{tabular}{lrr}",
-        r"\hline",
-        r"PDF Document & API Calls & Cost (USD) \\",
-        r"\hline",
+        r"    \hline",
+        r"    PDF Document & API Calls & Cost (USD) \\",
+        r"    \hline",
     ]
 
     total_calls = 0
@@ -194,15 +203,20 @@ def build_cost_latex_table(
         total_cost += cost
 
         safe = stem.replace("_", r"\_")
-        lines.append(f"\\texttt{{{safe}}} & {calls:,} & ${cost:.6f}$ \\\\")
+        tabular.append(f"    \\texttt{{{safe}}} & {calls:,} & ${cost:.6f}$ \\\\")
 
-    lines.append(r"\hline")
-    lines.append(
-        f"\\textbf{{TOTAL}} & {total_calls:,} & ${total_cost:.6f}$ \\\\"
+    tabular.append(r"    \hline")
+    tabular.append(
+        f"    \\textbf{{TOTAL}} & {total_calls:,} & ${total_cost:.6f}$ \\\\"
     )
-    lines.append(r"\hline")
-    lines.append(r"\end{tabular}")
-    lines.append("")
+    tabular.append(r"    \hline")
+    tabular.append(r"\end{tabular}")
+
+    lines = _wrap_table(
+        tabular,
+        caption="API cost per PDF document.",
+        label="tab:api-cost",
+    )
 
     output_path.write_text("\n".join(lines), encoding="utf-8")
     print(Fore.GREEN + f"Saved cost LaTeX table: {output_path}" + Style.RESET_ALL)
