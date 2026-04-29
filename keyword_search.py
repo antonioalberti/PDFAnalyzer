@@ -23,35 +23,36 @@ class KeywordSearcher:
     @staticmethod
     def find_occurrences_without_references(text, keywords):
         results = []
-        pages = text.split("Page ")
-        current_pos = 0
+        # Use regex to find actual page headers: "Page N:\n" at start of line
+        page_pattern = re.compile(r'^Page (\d+):\n', re.MULTILINE)
+        
+        # Find all page header positions
+        page_matches = list(page_pattern.finditer(text))
+        
+        if not page_matches:
+            print("Warning: No page headers found in text.")
+            return results
 
-        for page in pages[1:]:
-            if ":\n" not in page:
-                print(f"Separator not found on page: {page[:100]}...")
-                continue
-
-            page_num_str, content = page.split(":\n", 1)
-            page_num_match = re.match(r"\d+", page_num_str.strip())
-            if not page_num_match:
-                print(f"Warning: Could not extract page number from '{page_num_str.strip()}'")
-                current_pos += len("Page ") + len(page)
-                continue
-
-            page_num = int(page_num_match.group(0))
-            page_header_length = len("Page ") + len(page_num_str) + len(":\n")
-            page_content_start = current_pos + page_header_length
+        for i, match in enumerate(page_matches):
+            page_num = int(match.group(1))
+            page_content_start = match.end()
+            
+            # Determine where this page's content ends (start of next page or EOF)
+            if i + 1 < len(page_matches):
+                page_content_end = page_matches[i + 1].start()
+            else:
+                page_content_end = len(text)
+            
+            content = text[page_content_start:page_content_end]
 
             for keyword in keywords:
                 keyword_pattern = re.compile(rf"\b{re.escape(keyword)}\b", re.IGNORECASE)
-                for match in keyword_pattern.finditer(content):
-                    start_idx = match.start()
-                    end_idx = match.end()
+                for kw_match in keyword_pattern.finditer(content):
+                    start_idx = kw_match.start()
+                    end_idx = kw_match.end()
                     context = KeywordSearcher.extract_context(content, start_idx, end_idx)
                     absolute_start_idx = page_content_start + start_idx
                     results.append((page_num, keyword, context, absolute_start_idx))
-
-            current_pos += len("Page ") + len(page)
 
         return results
 
