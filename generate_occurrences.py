@@ -462,13 +462,13 @@ def main() -> None:
 
     # Build combined LaTeX tables
     if all_pdf_names:
-        counts_path = source_folder / "summary_counts_table.tex"
+        counts_path = source_folder / "1_pdfanalyzer_summary_counts_table.tex"
         build_counts_table(all_pdf_names, all_raw, all_sig, list(enabler_keywords.keys()), counts_path)
 
-        pct_path = source_folder / "summary_percentages_table.tex"
+        pct_path = source_folder / "1_pdfanalyzer_summary_percentages_table.tex"
         build_percentages_table(all_pdf_names, all_raw, all_sig, list(enabler_keywords.keys()), pct_path)
 
-        kw_latex_path = source_folder / "keyword_table.tex"
+        kw_latex_path = source_folder / "1_pdfanalyzer_keyword_table.tex"
         build_keyword_latex_table(all_pdf_names, all_kw_counters, list(enabler_keywords.keys()), kw_latex_path)
 
     print(Fore.GREEN + "\nDone." + Style.RESET_ALL)

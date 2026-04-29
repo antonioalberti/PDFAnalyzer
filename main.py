@@ -556,6 +556,18 @@ def process_single_pdf(
     cost_file = pdf_path.parent / f"{pdf_path.stem}_cost.txt"
     llm_analyzer.print_usage_summary(str(cost_file))
 
+    # Generate LaTeX tables with 1_ prefix
+    try:
+        from generate_notes_table import generate_latex_table
+        output_tex = pdf_path.parent / "1_pdfanalyzer_summary_notes_table.tex"
+        generate_latex_table(str(pdf_path.parent), str(output_tex))
+        
+        # Also generate cost and token tables if possible
+        # (This assumes LLMAnalyzer or another utility can generate these)
+        # For now, we ensure the notes table uses the 1_ prefix
+    except ImportError:
+        pass
+
 
 def parse_arguments() -> argparse.Namespace:
     """Parse command-line arguments."""
