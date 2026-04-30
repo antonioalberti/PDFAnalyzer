@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import argparse
 from pathlib import Path
 from typing import Dict, List
 from colorama import Fore, Style, init
@@ -104,9 +105,14 @@ class NotesTableGenerator:
         print(Fore.GREEN + f"Saved LaTeX table to {output_path}" + Style.RESET_ALL)
 
 if __name__ == "__main__":
-    # Using cloud.json as it contains the 7 categories used in the Standards folder
+    parser = argparse.ArgumentParser(description="Generate LaTeX notes table from PDFAnalyzer results.")
+    parser.add_argument("folder", help="Folder containing the result files")
+    parser.add_argument("keywords", help="Path to keywords JSON file")
+    
+    args = parser.parse_args()
+    
     generator = NotesTableGenerator(
-        source_folder="/home/aa/CodeRepository/JCC-2026a/Standards",
-        keywords_path="cloud.json"
+        source_folder=args.folder,
+        keywords_path=args.keywords
     )
     generator.run()
