@@ -104,6 +104,11 @@ class NotesTableGenerator:
         output_path.write_text("\n".join(latex), encoding="utf-8")
         print(Fore.GREEN + f"Saved LaTeX table to {output_path}" + Style.RESET_ALL)
 
+def generate_latex_table(source_folder: str, keywords_path: str):
+    """Function interface for integration with other scripts."""
+    generator = NotesTableGenerator(source_folder, keywords_path)
+    generator.run()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate LaTeX notes table from PDFAnalyzer results.")
     parser.add_argument("folder", help="Folder containing the result files")
@@ -111,8 +116,4 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    generator = NotesTableGenerator(
-        source_folder=args.folder,
-        keywords_path=args.keywords
-    )
-    generator.run()
+    generate_latex_table(args.folder, args.keywords)
