@@ -72,16 +72,19 @@ class NotesTableGenerator:
         cat_names = self.categories
         
         latex = [
-            "\\begin{table}[h]",
+            "\\begin{table*}[h]",
             "    \\centering",
+            "    \\caption{Evaluation scores for PDFAnalyzer (Snippet-based Analysis - Method 1) per PDF and category.}",
+            "    \\label{tab:pdfanalyzer-notes}",
             "    \\begin{tabular}{l" + "c" * len(cat_names) + "c}",
             "        \\hline",
             "        PDF Document & " + " & ".join([f"C{i+1}" for i in range(len(cat_names))]) + " & Total \\\\",
             "        \\hline"
         ]
         
-        for pdf in pdf_names:
-            row = [f"\\texttt{{{pdf}}}"]
+        for i, pdf in enumerate(pdf_names, start=1):
+            safe_pdf = pdf.replace("_", r"\_")
+            row = [f"\\textbf{{F{i}:}} \\texttt{{{safe_pdf}}}"]
             total_note = 0
             for cat in cat_names:
                 note = results[pdf].get(cat, 0.0)
@@ -93,9 +96,7 @@ class NotesTableGenerator:
         latex.extend([
             "        \\hline",
             "    \\end{tabular}",
-            "    \\caption{Notes extracted from PDFAnalyzer (Snippet-based Analysis) per PDF and category.}",
-            "    \\label{tab:pdfanalyzer-notes}",
-            "\\end{table}"
+            "\\end{table*}"
         ])
         
         output_path = self.source_folder / "1_pdfanalyzer_summary_notes_table.tex"

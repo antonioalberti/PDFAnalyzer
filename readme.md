@@ -1,72 +1,85 @@
 # PDFAnalyzer
 
-This project is a tool to analyze PDF documents for mentions of specific technological enablers, combining keyword search and AI-powered analysis.
+PDFAnalyzer is a powerful toolset designed for the automated thematic analysis of PDF documents. It leverages Large Language Models (LLMs) via the OpenRouter API to identify, categorize, and evaluate technological enablers or any specific themes defined by the user. The tool generates standardized LaTeX tables, making it ideal for researchers and professionals who need to synthesize information from large sets of technical documents.
 
-## How to use
+## Installation
 
-### Method 1: Using the batch processor
-
-1. Place the `main.py` and your keyword JSON file (e.g., `REF.json`) in the PDFAnalyzer folder.
-2. Place your PDF files in a separate folder (e.g., `ResearchPapers`).
-3. Run the `process_batch.bat` file in the Windows command prompt (CMD).
+1. **Clone the repository** and navigate to the project folder.
+2. **Set up a Virtual Environment** (optional but recommended):
+   ```bash
+   python -m venv venv
+   # Windows:
+   .\venv\Scripts\activate
+   # Linux/Ubuntu:
+   source venv/bin/activate
    ```
-   process_batch.bat
+3. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
    ```
-   This will process all PDF files in batches of 3, using the specified keyword JSON file and OpenRouter API.
-
-### Method 2: Using the manual processor
-
-1. Place the `main.py`, `run.bat`, and your keyword JSON file (e.g., `6G.json`) in the same folder where the PDF files you want to analyze are located.
-2. The PDF files must be named numerically as `p0.pdf`, `p1.pdf`, `p2.pdf`, and so on.
-3. Run the `install.ps1` PowerShell script to set up a Python virtual environment and install dependencies.
-4. Run the `run.bat` file in the Windows command prompt (CMD) with the following arguments:
+4. **Configure API Key**:
+   Create a `.env` file in the root directory and add your OpenRouter API key:
    ```
-   run.bat [source_folder] [start_index] [end_index] [min_representative_matches] [keywords_path] [model] [prompt_approval]
-   ```
-   
-   Required parameters:
-   - `source_folder`: Path to the folder containing PDF files
-   - `start_index`: Starting index (0-based) of PDF files to process
-   - `end_index`: Ending index (0-based) of PDF files to process (inclusive)
-   - `min_representative_matches`: Minimum keyword matches to consider source representative
-   
-   Optional parameters:
-   - `keywords_path`: Path to JSON file with keywords (default: 6G.json)
-   - `model`: LLM model to use (default: gpt-4.1-mini-2025-04-14)
-   - `prompt_approval`: Enable/disable prompt approval (true/false, default: false)
-   
-   For example:
-   ```
-   run.bat C:\Users\alberti\Documents\Artigos 0 42 100
-   ```
-   This will process PDF files from `p0.pdf` to `p42.pdf` in the specified folder, generating text files with the analysis results for each PDF.
-   
-   Another example with custom parameters:
-   ```
-   run.bat C:\Users\alberti\Documents\Artigos 0 42 100 REF.json gpt-4.1-mini-2025-04-14 false
+   ROUTER_API_KEY=your_api_key_here
    ```
 
-## What the script does
+## Analysis Methods
 
-- The `main.py` script reads each PDF, extracts the text from each page, and searches for keywords related to different categories of technological enablers.
-- For each occurrence found, the script prints the page, the keyword, and a snippet of context from the text.
-- The script classifies and counts keyword occurrences by enabler category.
-- If the total matches exceed the minimum representative threshold, it uses an AI language model (via the OpenRouter API with OpenAI Python library) to generate an advanced analysis based on the keywords and significant paragraphs extracted from the paper.
-- The `llm_query.py` has been updated to properly use the OpenAI library with OpenRouter API for enhanced compatibility.
-- The results are saved in `.txt` files corresponding to each analyzed PDF, with category-specific analysis files for each enabler category.
+The project provides two complementary methods for document analysis:
+
+### Method 1: Granular Analysis (Snippet-based)
+This method extracts specific paragraphs containing user-defined keywords and uses an LLM to evaluate the significance of each occurrence. It is highly precise and cost-effective for large document sets.
+```bash
+python main.py "path/to/pdfs" [start_index] [end_index] keywords.json
+```
+*Example:* `python main.py "./documents" 0 10 my_themes.json`
+
+### Method 2: Full-Context Analysis
+This method sends the entire text of the PDF to the LLM for a holistic evaluation of each category. It provides a cohesive summary and a qualitative score (0-10) for the document's coverage of the theme.
+```bash
+python full_pdf_analyzer.py --source "path/to/pdfs" --keywords keywords.json --output "path/to/output"
+```
+
+## Post-Processing & LaTeX Generation
+
+After running the analysis, use these scripts to generate standardized LaTeX tables:
+
+### 1. Keyword Occurrences Table
+Generates tables showing the frequency and relevance rate of keyword matches per category.
+```bash
+python generate_occurrences.py "path/to/results" keywords.json
+```
+
+### 2. Cost and Token Summary
+Consolidates API usage costs and token counts from both methods into formatted LaTeX tables.
+```bash
+python generate_cost_summary.py "path/to/results"
+```
+
+### 3. Final Comparison Table (Scores)
+Extracts the qualitative scores (0-10) and generates a final comparison matrix across all analyzed documents.
+```bash
+python generate_notes_table.py "path/to/results" keywords.json
+```
+
+## Automation Scripts
+
+The project includes scripts for serial execution of the entire pipeline:
+- **Windows**: `run_all_analysis.ps1` (PowerShell)
+- **Linux/Ubuntu**: `run_all_analysis.sh` (Bash)
+
+## Key Features
+
+- **Thematic Flexibility**: Define your own categories and keywords in a simple JSON format.
+- **Standardized Output**: Automatically generates LaTeX code following scientific publication standards (captions on top, wide table support, bold identifiers).
+- **Multi-Model Support**: Easily switch between different LLMs (Gemini, Claude, GPT) via OpenRouter.
+- **Cost & Token Tracking**: Detailed logging and reporting of API consumption.
 
 ## Requirements
 
 - Python 3.x
-- PyPDF2, pdfplumber, and openai libraries (install via `pip install -r requirements.txt`)
-- An OpenRouter API key set as `ROUTER_API_KEY` in a `.env` file
-- The `.env` file should be placed in the PDFAnalyzer directory
-
-## Notes
-
-- The script excludes the references section of the PDFs to avoid false positives.
-- The range of files processed in `run.bat` can be adjusted as needed.
-- The `install.ps1` script sets up a Python virtual environment and installs all dependencies.
+- Libraries: `PyPDF2`, `pdfplumber`, `openai`, `requests`, `python-dotenv`, `colorama`.
+- OpenRouter API Key.
 
 ## Contact
 

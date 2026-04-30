@@ -55,9 +55,9 @@ def _wrap_table(tabular_lines: List[str], caption: str, label: str) -> List[str]
     return [
         r"\begin{table}[h]",
         r"    \centering",
-    ] + ["    " + line for line in tabular_lines] + [
         f"    \\caption{{{caption}}}",
         f"    \\label{{{label}}}",
+    ] + ["    " + line for line in tabular_lines] + [
         r"\end{table}",
         "",
     ]
@@ -83,14 +83,14 @@ def build_consolidated_token_table(
     ]
 
     m1_total = {"p": 0, "c": 0, "t": 0, "calls": 0}
-    for stem in sorted(method1_data.keys()):
+    for i, stem in enumerate(sorted(method1_data.keys()), start=1):
         d = method1_data[stem]
         m1_total["p"] += d["prompt_tokens"]
         m1_total["c"] += d["completion_tokens"]
         m1_total["t"] += d["total_tokens"]
         m1_total["calls"] += d["calls"]
         safe = stem.replace("_", r"\_")
-        tabular.append(f"    \\texttt{{{safe}}} & {d['prompt_tokens']:,} & {d['completion_tokens']:,} & {d['total_tokens']:,} & {d['calls']:,} \\\\")
+        tabular.append(f"    \\textbf{{F{i}:}} \\texttt{{{safe}}} & {d['prompt_tokens']:,} & {d['completion_tokens']:,} & {d['total_tokens']:,} & {d['calls']:,} \\\\")
 
     tabular.append(r"    \hline")
     tabular.append(f"    \textbf{{M1 Total}} & {m1_total['p']:,} & {m1_total['c']:,} & {m1_total['t']:,} & {m1_total['calls']:,} \\\\")
@@ -140,12 +140,12 @@ def build_consolidated_cost_table(
 
     m1_calls = 0
     m1_cost = 0.0
-    for stem in sorted(method1_data.keys()):
+    for i, stem in enumerate(sorted(method1_data.keys()), start=1):
         d = method1_data[stem]
         m1_calls += d["calls"]
         m1_cost += d["cost_usd"]
         safe = stem.replace("_", r"\_")
-        tabular.append(f"    \\texttt{{{safe}}} & {d['calls']:,} & ${d['cost_usd']:.6f} \\\\")
+        tabular.append(f"    \\textbf{{F{i}:}} \\texttt{{{safe}}} & {d['calls']:,} & ${d['cost_usd']:.6f} \\\\")
 
     tabular.append(r"    \hline")
     tabular.append(f"    \textbf{{M1 Total}} & {m1_calls:,} & ${m1_cost:.6f} \\\\")

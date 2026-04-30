@@ -18,7 +18,7 @@ class FullPDFAnalyzer:
         self.source_folder = Path(source_folder)
         self.keywords_path = Path(keywords_path)
         self.output_folder = Path(output_folder)
-        self.model_name = "google/gemini-3-flash-preview"
+        self.model_name = "google/gemini-2.5-pro"
         self.llm_analyzer = LLMAnalyzer()
         self.categories = self._load_categories()
         
@@ -75,16 +75,19 @@ Considering all above and the current state of the art in the article area, give
         # Summary Counts Table (using notes as a proxy for "significance" in this full-text version)
         # Since we don't have keyword counts in this version, we'll just show the notes
         latex_counts = [
-            "\\begin{table}[h]",
+            "\\begin{table*}[h]",
             "    \\centering",
+            "    \\caption{Evaluation scores assigned by LLM (Full Text Analysis - Method 2) per PDF and category.}",
+            "    \\label{tab:full-text-notes}",
             "    \\begin{tabular}{l" + "c" * len(cat_names) + "c}",
             "        \\hline",
             "        PDF Document & " + " & ".join([f"C{i+1}" for i in range(len(cat_names))]) + " & Total \\\\",
             "        \\hline"
         ]
         
-        for pdf in pdf_names:
-            row = [f"\\texttt{{{pdf}}}"]
+        for i, pdf in enumerate(pdf_names, start=1):
+            safe_pdf = pdf.replace("_", r"\_")
+            row = [f"\\textbf{{F{i}:}} \\texttt{{{safe_pdf}}}"]
             total_note = 0
             for cat in cat_names:
                 note = results[pdf].get(cat, 0)
@@ -96,9 +99,7 @@ Considering all above and the current state of the art in the article area, give
         latex_counts.extend([
             "        \\hline",
             "    \\end{tabular}",
-            "    \\caption{Notes assigned by LLM (Full Text Analysis) per PDF and category.}",
-            "    \\label{tab:full-text-notes}",
-            "\\end{table}"
+            "\\end{table*}"
         ])
         
         output_path = self.output_folder / "2_alternative_summary_notes_table.tex"
@@ -116,8 +117,9 @@ Considering all above and the current state of the art in the article area, give
         total_cost = summary['total_cost_usd']
         
         # Add the full text analysis row first
-        rows.append(f"        \\texttt{{full\\_text\\_analysis}} & {summary['calls']} & ${summary['total_cost_usd']:.6f} \\\\")
+        rows.append(f"        \\texttt{{Full Text Analysis}} & {summary['calls']} & ${summary['total_cost_usd']:.6f} \\\\")
         
+        pdf_idx = 1
         for cost_file in cost_files:
             if cost_file.name == "full_text_analysis_cost.txt":
                 continue
@@ -134,13 +136,16 @@ Considering all above and the current state of the art in the article area, give
                 cost = float(cost_match.group(1))
                 
                 safe_stem = stem.replace("_", r"\_")
-                rows.append(f"        \\texttt{{{safe_stem}}} & {calls:,} & ${cost:.6f} \\\\")
+                rows.append(f"        \\textbf{{F{pdf_idx}:}} \\texttt{{{safe_stem}}} & {calls:,} & ${cost:.6f} \\\\")
                 total_calls += calls
                 total_cost += cost
+                pdf_idx += 1
 
         latex_cost = [
             "\\begin{table}[h]",
             "    \\centering",
+            "    \\caption{API cost per PDF document (Combined Analysis).}",
+            "    \\label{tab:api-cost}",
             "    \\begin{tabular}{lrr}",
             "        \\hline",
             "        PDF Document & API Calls & Cost (USD) \\\\",
@@ -154,8 +159,6 @@ Considering all above and the current state of the art in the article area, give
             f"        \\textbf{{TOTAL}} & {total_calls:,} & ${total_cost:.6f} \\\\",
             "        \\hline",
             "    \\end{tabular}",
-            "    \\caption{API cost per PDF document (Combined Analysis).}",
-            "    \\label{tab:api-cost}",
             "\\end{table}"
         ])
         
@@ -176,8 +179,9 @@ Considering all above and the current state of the art in the article area, give
         total_calls = summary['calls']
         
         # Add full text analysis row
-        rows.append(f"        \\texttt{{full\\_text\\_analysis}} & {summary['prompt_tokens']:,} & {summary['completion_tokens']:,} & {summary['total_tokens']:,} & {summary['calls']:,} \\\\")
+        rows.append(f"        \\texttt{{Full Text Analysis}} & {summary['prompt_tokens']:,} & {summary['completion_tokens']:,} & {summary['total_tokens']:,} & {summary['calls']:,} \\\\")
         
+        pdf_idx = 1
         for cost_file in cost_files:
             if cost_file.name == "full_text_analysis_cost.txt":
                 continue
@@ -198,15 +202,18 @@ Considering all above and the current state of the art in the article area, give
             
             if calls > 0:
                 safe_stem = stem.replace("_", r"\_")
-                rows.append(f"        \\texttt{{{safe_stem}}} & {prompt:,} & {completion:,} & {total:,} & {calls:,} \\\\")
+                rows.append(f"        \\textbf{{F{pdf_idx}:}} \\texttt{{{safe_stem}}} & {prompt:,} & {completion:,} & {total:,} & {calls:,} \\\\")
                 total_prompt += prompt
                 total_completion += completion
                 total_tokens += total
                 total_calls += calls
+                pdf_idx += 1
 
         latex_tokens = [
             "\\begin{table}[h]",
             "    \\centering",
+            "    \\caption{Token usage per PDF document (Combined Analysis).}",
+            "    \\label{tab:token-usage}",
             "    \\begin{tabular}{lrrrr}",
             "        \\hline",
             "        PDF Document & Prompt & Completion & Total & Calls \\\\",
@@ -218,8 +225,6 @@ Considering all above and the current state of the art in the article area, give
             f"        \\textbf{{TOTAL}} & {total_prompt:,} & {total_completion:,} & {total_tokens:,} & {total_calls:,} \\\\",
             "        \\hline",
             "    \\end{tabular}",
-            "    \\caption{Token usage per PDF document (Combined Analysis).}",
-            "    \\label{tab:token-usage}",
             "\\end{table}"
         ])
         
@@ -263,7 +268,7 @@ Considering all above and the current state of the art in the article area, give
 
 if __name__ == "__main__":
     load_dotenv()
-    parser = argparse.ArgumentParser(description="Full PDF Analyzer using Gemini 3 Flash")
+    parser = argparse.ArgumentParser(description="Full PDF Analyzer using Gemini 2.5 Pro")
     parser.add_argument("--source", default="/home/aa/CodeRepository/JCC-2026a/Standards", help="Source folder with PDFs")
     parser.add_argument("--keywords", default="cloud.json", help="Path to keywords JSON")
     parser.add_argument("--output", default="/home/aa/CodeRepository/JCC-2026a/Standards", help="Output folder")

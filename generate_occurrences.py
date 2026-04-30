@@ -91,15 +91,16 @@ def pct(found: int, significant: int) -> str:
     return f"{(significant / found) * 100:.1f}"
 
 
-def _wrap_table(tabular_lines: List[str], caption: str, label: str) -> List[str]:
+def _wrap_table(tabular_lines: List[str], caption: str, label: str, wide: bool = False) -> List[str]:
     """Wrap tabular content in a full table environment."""
+    env = "table*" if wide else "table"
     return [
-        r"\begin{table}[h]",
+        f"\\begin{{{env}}}[h]",
         r"    \centering",
-    ] + ["    " + line for line in tabular_lines] + [
         f"    \\caption{{{caption}}}",
         f"    \\label{{{label}}}",
-        r"\end{table}",
+    ] + ["    " + line for line in tabular_lines] + [
+        f"\\end{{{env}}}",
         "",
     ]
 
@@ -200,7 +201,7 @@ def generate_occurrences_file(
         f"{found}/{sig} ({pct(found,sig)}\\%)"
         for found, sig in zip(raw_counts, sig_counts)
     )
-    latex_row = f"\\texttt{{{short_name}}} & {cells} & {total_found}/{total_significant} ({total_pct}\\%) \\"  # noqa: E501
+    latex_row = f"\\texttt{{{short_name}}} & {cells} & {total_found}/{total_significant} ({total_pct}\\%) \\\\"  # noqa: E501
     lines.append(latex_row)
     lines.append(sep)
 
@@ -237,12 +238,12 @@ def build_counts_table(
     tabular.append("    " + header)
     tabular.append(r"    \hline")
 
-    for name, raw_row, sig_row in zip(pdf_names, all_raw, all_sig):
+    for i, (name, raw_row, sig_row) in enumerate(zip(pdf_names, all_raw, all_sig), start=1):
         short_name = name.replace("_", r"\_")
         cells = " & ".join(f"{found}/{sig}" for found, sig in zip(raw_row, sig_row))
         total_found = sum(raw_row)
         total_sig = sum(sig_row)
-        row = f"\\texttt{{{short_name}}} & {cells} & {total_found}/{total_sig} \\"  # noqa: E501
+        row = f"\\textbf{{F{i}:}} \\texttt{{{short_name}}} & {cells} & {total_found}/{total_sig} \\\\"  # noqa: E501
         tabular.append("    " + row)
 
     tabular.append(r"    \hline")
@@ -255,6 +256,7 @@ def build_counts_table(
             tabular,
             caption="Keyword occurrences found and significant per PDF and category.",
             label="tab:occurrence-counts",
+            wide=True,
         )
     )
 
@@ -284,13 +286,13 @@ def build_percentages_table(
     tabular.append("    " + header)
     tabular.append(r"    \hline")
 
-    for name, raw_row, sig_row in zip(pdf_names, all_raw, all_sig):
+    for i, (name, raw_row, sig_row) in enumerate(zip(pdf_names, all_raw, all_sig), start=1):
         short_name = name.replace("_", r"\_")
         cells = " & ".join(f"{pct(found, sig)}\\%" for found, sig in zip(raw_row, sig_row))
         total_found = sum(raw_row)
         total_sig = sum(sig_row)
         total_p = pct(total_found, total_sig)
-        row = f"\\texttt{{{short_name}}} & {cells} & {total_p}\\% \\"  # noqa: E501
+        row = f"\\textbf{{F{i}:}} \\texttt{{{short_name}}} & {cells} & {total_p}\\% \\\\"  # noqa: E501
         tabular.append("    " + row)
 
     tabular.append(r"    \hline")
@@ -303,6 +305,7 @@ def build_percentages_table(
             tabular,
             caption="Relevance rate of keyword occurrences per PDF and category.",
             label="tab:occurrence-percentages",
+            wide=True,
         )
     )
 
@@ -346,8 +349,7 @@ def build_keyword_latex_table(
         ]
 
         # Header
-        safe_names = [name.replace("_", r"\_") for name in pdf_names]
-        header = "Keyword & " + " & ".join(f"\\texttt{{{n}}}" for n in safe_names) + r" & Total \\"  # noqa: E501
+        header = "Keyword & " + " & ".join(f"F{i+1}" for i in range(n_pdfs)) + r" & Total \\\\"
         tabular.append("    " + header)
         tabular.append(r"    \hline")
 
