@@ -269,9 +269,9 @@ Considering all above and the current state of the art in the article area, give
 if __name__ == "__main__":
     load_dotenv()
     parser = argparse.ArgumentParser(description="Full PDF Analyzer using Gemini 2.5 Pro")
-    parser.add_argument("--source", default="/home/aa/CodeRepository/JCC-2026a/Standards", help="Source folder with PDFs")
+    parser.add_argument("--source", required=True, help="Source folder with PDFs")
     parser.add_argument("--keywords", default="cloud.json", help="Path to keywords JSON")
-    parser.add_argument("--output", default="/home/aa/CodeRepository/JCC-2026a/Standards", help="Output folder")
+    parser.add_argument("--output", required=True, help="Output folder")
     
     args = parser.parse_args()
     
