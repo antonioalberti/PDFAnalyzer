@@ -40,33 +40,19 @@ This method sends the entire text of the PDF to the LLM for a holistic evaluatio
 python full_pdf_analyzer.py --source "path/to/pdfs" --keywords keywords.json --output "path/to/output"
 ```
 
-## Post-Processing & LaTeX Generation
+## Companion Article (JCC-2026a)
 
-After running the analysis, use these scripts to generate standardized LaTeX tables:
+The per-PDF results produced by `main.py` and `full_pdf_analyzer.py` (notes, occurrences, cost/token logs) are the raw material for the LaTeX tables published in the JCC-2026a paper. The post-processing scripts that consolidate those results into the article's tables — together with the `cloud.json` taxonomy used and the end-to-end pipeline runners — live in the companion repository:
 
-### 1. Keyword Occurrences Table
-Generates tables showing the frequency and relevance rate of keyword matches per category.
-```bash
-python generate_occurrences.py "path/to/results" keywords.json
-```
+→ **[antonioalberti/PaperPDFAnalyzer](https://github.com/antonioalberti/PaperPDFAnalyzer)**
 
-### 2. Cost and Token Summary
-Consolidates API usage costs and token counts from both methods into formatted LaTeX tables.
-```bash
-python generate_cost_summary.py "path/to/results"
-```
-
-### 3. Final Comparison Table (Scores)
-Extracts the qualitative scores (0-10) and generates a final comparison matrix across all analyzed documents.
-```bash
-python generate_notes_table.py "path/to/results" keywords.json
-```
-
-## Automation Scripts
-
-The project includes scripts for serial execution of the entire pipeline:
-- **Windows**: `run_all_analysis.ps1` (PowerShell)
-- **Linux/Ubuntu**: `run_all_analysis.sh` (Bash)
+That repo contains:
+- `generate_occurrences.py` — per-PDF and consolidated keyword-occurrence tables
+- `generate_cost_summary.py` — consolidated cost/token tables for both methods
+- `generate_notes_table.py` — qualitative-score comparison matrix
+- `generate_diff_table.py` — Method 1 vs. Method 2 score-diff table
+- `run_all_analysis.sh` / `run_all_analysis.ps1` — full pipeline runners
+- `cloud.json` — the 7-enabler cloud-computing taxonomy used in the paper
 
 ## Key Features
 
