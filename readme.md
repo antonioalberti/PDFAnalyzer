@@ -93,6 +93,7 @@ That repo contains:
 - **Standardized Output**: Automatically generates LaTeX code following scientific publication standards (captions on top, wide table support, bold identifiers).
 - **Multi-Model Support**: Easily switch between different LLMs (Gemini, Claude, GPT) via OpenRouter.
 - **Cost & Token Tracking**: Detailed logging and reporting of API consumption.
+- **Statistics Enhancements** (v1.3): Per-call latency tracking, sampling parameter validation (temperature/top_p with reasoning-model guard), model version detection, corrected pricing fallbacks, timestamped Results directories (`<source>/Results/<timestamp>/`), and machine-readable `<stem>_summary.json` per run — enabling automated variance analysis across repeated trials. See [`STATISTICS_SPEC.md`](./STATISTICS_SPEC.md) for the full specification.
 - **Optional Parallelism**: Speed up Method 1 with `--parallel` (intra-PDF threads + inter-PDF processes) — opt-in, identical outputs to sequential, ≈1.6× speedup per PDF (1 PDF), scaling to ≈5–10× on batches of 6+ PDFs. See [`PARALLELIZATION_SPEC.md`](./PARALLELIZATION_SPEC.md) for the design.
 
 ## Requirements
