@@ -16,12 +16,18 @@ init(autoreset=True)
 class FullPDFAnalyzer:
     def __init__(self, source_folder: str, keywords_path: str, output_folder: str,
                  temperature: float = 1.0, top_p: float = 1.0,
-                 provider: str = "openrouter", local_url: str | None = None):
+                 provider: str = "openrouter", local_url: str | None = None,
+                 model_name: str = "random", max_workers: int = 3):
         self.source_folder = Path(source_folder)
         self.keywords_path = Path(keywords_path)
         self.output_folder = Path(output_folder)
-        self.model_name = "google/gemini-2.5-pro"
+        self.model_name = model_name
+        self.max_workers = max_workers
         self.llm_analyzer = LLMAnalyzer(temperature=temperature, top_p=top_p, provider=provider, local_base_url=local_url)
+        # Provider-model validation
+        if model_name != "random" and model_name not in self.llm_analyzer.models:
+            print(Fore.RED + f"Error: Model '{model_name}' not found in {self.llm_analyzer.active_provider.models_file}" + Style.RESET_ALL)
+            sys.exit(2)
         self.categories = self._load_categories()
         self._run_dir = None  # Set by run() via R7
 
@@ -60,7 +66,8 @@ Considering the paper text above, write no more than ONE SINGLE PARAGRAPH summar
 Considering all above and the current state of the art in the article area, give a note for this paper after the single PARAGRAPH in a new line. The format must be: NOTE: X, where X is the result of your evaluation between 0 and 10. Answer in English."""
 
         print(Fore.YELLOW + f"  Analyzing category: {category}..." + Style.RESET_ALL)
-        response = self.llm_analyzer.analyze({}, prompt, model_name=self.model_name)
+        effective_model = self.model_name if self.model_name != "random" else self.llm_analyzer.get_random_model()
+        response = self.llm_analyzer.analyze({}, prompt, model_name=effective_model)
         
         # Extract note
         note = 0
@@ -254,6 +261,9 @@ Considering all above and the current state of the art in the article area, give
         
         for pdf_path in pdf_files:
             print(Fore.BLUE + f"\nProcessing {pdf_path.name}..." + Style.RESET_ALL)
+            # Record call_records index before this PDF
+            start_idx = len(self.llm_analyzer.call_records)
+            
             pdf_text = self.extract_text(pdf_path)
             pdf_results = {}
             
@@ -266,13 +276,29 @@ Considering all above and the current state of the art in the article area, give
                 resp, note = self.analyze_category(pdf_text, cat, kws)
                 return cat, note, resp
 
-            with ThreadPoolExecutor(max_workers=3) as executor:
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 futures = [executor.submit(process_cat, (cat, kws)) for cat, kws in self.categories.items()]
                 for future in futures:
                     cat, note, resp = future.result()
                     pdf_results[cat] = note
             
             all_results[pdf_path.stem] = pdf_results
+
+            # -- Per-PDF statistics (METHOD2_COMPAT_SPEC M6) --
+            end_idx = len(self.llm_analyzer.call_records)
+            pdf_records = self.llm_analyzer.call_records[start_idx:end_idx]
+            if pdf_records:
+                pdf_cost_file = self._run_dir / f"{pdf_path.stem}_2_cost.txt"
+                self.llm_analyzer.print_usage_summary(str(pdf_cost_file), records=pdf_records)
+                self.llm_analyzer.write_summary_json(
+                    self._run_dir,
+                    pdf_path,
+                    run_id=self._run_dir.name,
+                    model_requested=self.model_name,
+                    category_results=pdf_results,
+                    records=pdf_records,
+                    method="full_text",
+                )
             
         self.generate_latex_tables(all_results)
         self.generate_cost_table()
@@ -288,14 +314,15 @@ Considering all above and the current state of the art in the article area, give
             Path("2_full_text_analysis.pdf"),  # synthetic stem matching cost file
             run_id=self._run_dir.name,
             model_requested=self.model_name,
+            category_results=all_results if all_results else None,
+            method="full_text",
         )
 
 if __name__ == "__main__":
     load_dotenv()
-    parser = argparse.ArgumentParser(description="Full PDF Analyzer using Gemini 2.5 Pro")
+    parser = argparse.ArgumentParser(description="Full PDF Analyzer (Method 2)")
     parser.add_argument("--source", required=True, help="Source folder with PDFs")
     parser.add_argument("--keywords", default="cloud.json", help="Path to keywords JSON")
-    parser.add_argument("--output", required=True, help="Output folder")
     # -- MULTIPROVIDER_SPEC v1.2 — E9 (provider selection) --
     parser.add_argument(
         "--provider", choices=["openrouter", "local"], default="openrouter",
@@ -305,9 +332,30 @@ if __name__ == "__main__":
         "--local-url", default=None, dest="local_url",
         help="Override the local LLM base URL (default: http://192.168.0.200:8080/v1).",
     )
+    # -- METHOD2_COMPAT_SPEC v1.0 — M1/M2/M3 (model, sampling, concurrency) --
+    parser.add_argument(
+        "--model", default="random",
+        help="LLM model name or 'random' (default: random). Must exist in active provider's models file.",
+    )
+    parser.add_argument(
+        "--temperature", type=float, default=1.0,
+        help="Sampling temperature (default: 1.0). Reasoning models only support 1.0.",
+    )
+    parser.add_argument(
+        "--top-p", type=float, default=1.0, dest="top_p",
+        help="Top-p (nucleus sampling) (default: 1.0). Reasoning models only support 1.0.",
+    )
+    parser.add_argument(
+        "--max-workers", type=int, default=3, dest="max_workers",
+        help="Max concurrent category threads (default: 3). Use 1 for sequential with local provider.",
+    )
     
     args = parser.parse_args()
     
-    analyzer = FullPDFAnalyzer(args.source, args.keywords, args.output,
-                               provider=args.provider, local_url=args.local_url)
+    analyzer = FullPDFAnalyzer(
+        args.source, args.keywords, args.source,
+        provider=args.provider, local_url=args.local_url,
+        model_name=args.model, temperature=args.temperature, top_p=args.top_p,
+        max_workers=args.max_workers,
+    )
     analyzer.run()

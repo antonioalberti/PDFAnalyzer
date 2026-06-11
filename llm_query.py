@@ -451,31 +451,42 @@ class LLMAnalyzer:
     # Usage summary
     # ------------------------------------------------------------------
 
-    def get_usage_summary(self) -> dict:
-        """Return aggregated token and cost totals."""
-        total_prompt = sum(r.prompt_tokens for r in self.call_records)
-        total_completion = sum(r.completion_tokens for r in self.call_records)
-        total_cost = sum(r.cost_usd for r in self.call_records)
+    def get_usage_summary(self, *, records: list | None = None) -> dict:
+        """Return aggregated token and cost totals.
+
+        If *records* is provided, aggregate from that slice instead
+        of ``self.call_records``.
+        """
+        recs = records if records is not None else self.call_records
+        total_prompt = sum(r.prompt_tokens for r in recs)
+        total_completion = sum(r.completion_tokens for r in recs)
+        total_cost = sum(r.cost_usd for r in recs)
         return {
             "prompt_tokens": total_prompt,
             "completion_tokens": total_completion,
             "total_tokens": total_prompt + total_completion,
             "total_cost_usd": total_cost,
-            "calls": len(self.call_records),
-            "openrouter_calls": sum(1 for r in self.call_records if r.source == "openrouter"),
-            "generation_endpoint_calls": sum(1 for r in self.call_records if r.source == "generation_endpoint"),
-            "estimated_calls": sum(1 for r in self.call_records if r.source == "estimate"),
+            "calls": len(recs),
+            "openrouter_calls": sum(1 for r in recs if r.source == "openrouter"),
+            "generation_endpoint_calls": sum(1 for r in recs if r.source == "generation_endpoint"),
+            "estimated_calls": sum(1 for r in recs if r.source == "estimate"),
         }
 
-    def print_usage_summary(self, output_file: str | None = None) -> None:
-        """Print token usage and cost summary to console and optionally save to a file."""
+    def print_usage_summary(self, output_file: str | None = None, *, records: list | None = None) -> None:
+        """Print token usage and cost summary to console and optionally save to a file.
+
+        If *records* is provided, compute statistics from that slice instead
+        of ``self.call_records`` (used for per-PDF summaries in Method 2).
+        """
         import statistics as _stats
 
-        summary = self.get_usage_summary()
+        call_records = records if records is not None else self.call_records
+
+        summary = self.get_usage_summary(records=records)
         cost_str = f"${summary['total_cost_usd']:.8f} USD"
 
         # Count calls per source (including local)
-        local_calls = sum(1 for r in self.call_records if r.source == "local")
+        local_calls = sum(1 for r in call_records if r.source == "local")
 
         lines = [
             "=" * 70,
@@ -503,7 +514,7 @@ class LLMAnalyzer:
         ]
 
         # --- LATENCY section ---
-        latencies = [r.latency_s for r in self.call_records if r.latency_s is not None]
+        latencies = [r.latency_s for r in call_records if r.latency_s is not None]
         lines.append("LATENCY (per LLM call, seconds)")
         lines.append("-" * 70)
         if latencies:
@@ -523,9 +534,9 @@ class LLMAnalyzer:
         lines.append("=" * 70)
 
         # --- SAMPLING & MODEL section ---
-        temp_vals = [r.temperature for r in self.call_records if r.temperature is not None]
-        top_p_vals = [r.top_p for r in self.call_records if r.top_p is not None]
-        total_calls = len(self.call_records)
+        temp_vals = [r.temperature for r in call_records if r.temperature is not None]
+        top_p_vals = [r.top_p for r in call_records if r.top_p is not None]
+        total_calls = len(call_records)
         na_temp = total_calls - len(temp_vals)
         na_top_p = total_calls - len(top_p_vals)
 
@@ -552,7 +563,7 @@ class LLMAnalyzer:
         lines.append("=" * 70)
 
         # --- PER-MODEL BREAKDOWN (extended with actual: + latency:) ---
-        if self.call_records:
+        if call_records:
             model_data: dict[str, dict] = defaultdict(
                 lambda: {
                     "prompt_tokens": 0,
@@ -564,7 +575,7 @@ class LLMAnalyzer:
                     "latencies": [],                # list of latency_s values
                 }
             )
-            for rec in self.call_records:
+            for rec in call_records:
                 m = model_data[rec.model]
                 m["prompt_tokens"] += rec.prompt_tokens
                 m["completion_tokens"] += rec.completion_tokens
@@ -632,13 +643,18 @@ class LLMAnalyzer:
         *,
         category_results: dict | None = None,
         significant_paragraphs_count: int | None = None,
+        records: list | None = None,
+        method: str | None = None,
     ):
         """Write a <pdf_stem>_summary.json in *output_dir* for batch analysis.
 
-        Collects aggregate data from ``self.call_records`` and optional
-        analysis-result data (category_results, significant_paragraphs_count)
-        passed by the caller, then writes a single JSON file matching the
-        schema in STATISTICS_SPEC.md §R8.
+        Collects aggregate data from ``self.call_records`` (or *records*
+        if provided) and optional analysis-result data (category_results,
+        significant_paragraphs_count) passed by the caller, then writes a
+        single JSON file matching the schema in STATISTICS_SPEC.md §R8.
+
+        If *records* is provided, aggregate from that slice instead of
+        ``self.call_records`` (used for per-PDF summaries in Method 2).
 
         Returns the path of the written file.
         """
@@ -649,15 +665,17 @@ class LLMAnalyzer:
         output_dir = _Path(output_dir)
         pdf_path = _Path(pdf_path)
 
+        call_records = records if records is not None else self.call_records
+
         # --- Aggregate from call_records ---
-        total_prompt = sum(r.prompt_tokens for r in self.call_records)
-        total_completion = sum(r.completion_tokens for r in self.call_records)
-        total_cost = sum(r.cost_usd for r in self.call_records)
-        total_calls = len(self.call_records)
+        total_prompt = sum(r.prompt_tokens for r in call_records)
+        total_completion = sum(r.completion_tokens for r in call_records)
+        total_cost = sum(r.cost_usd for r in call_records)
+        total_calls = len(call_records)
 
         # Dominant cost source (most common)
         source_counts: dict[str, int] = {}
-        for r in self.call_records:
+        for r in call_records:
             source_counts[r.source] = source_counts.get(r.source, 0) + 1
         cost_source = (
             max(source_counts, key=lambda k: source_counts[k])
@@ -666,7 +684,7 @@ class LLMAnalyzer:
         )
 
         # --- Latency ---
-        latencies = [r.latency_s for r in self.call_records if r.latency_s is not None]
+        latencies = [r.latency_s for r in call_records if r.latency_s is not None]
         latency_block: dict = {"count": len(latencies)}
         if latencies:
             latency_block["min_s"] = round(min(latencies), 3)
@@ -682,7 +700,7 @@ class LLMAnalyzer:
 
         # --- model_versions ---
         model_versions: dict[str, int] = {}
-        for r in self.call_records:
+        for r in call_records:
             if r.model_version:
                 model_versions[r.model_version] = model_versions.get(r.model_version, 0) + 1
 
@@ -701,6 +719,10 @@ class LLMAnalyzer:
             "cost_source": cost_source,
             "latency": latency_block,
         }
+
+        # Method identifier (for cross-method comparison)
+        if method is not None:
+            summary["method"] = method
 
         # Optional analysis-result fields
         if significant_paragraphs_count is not None:
