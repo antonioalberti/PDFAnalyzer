@@ -1,8 +1,12 @@
 # PDFAnalyzer — Parallelization Spec (A + C)
 
-> **Status:** Draft v1 — awaiting user approval on 4 open questions before implementation.
+> **Status:** Draft v1.1 — approved 2026-06-11, ready to implement.
 > **Date:** 2026-06-11
 > **Scope:** PDFAnalyzer repository only. Affects Method 1 (occurrence filtering) only — Method 2 unaffected.
+>
+> **Revision history:**
+> - v1.0 (2026-06-11) — initial draft, awaiting user approval
+> - v1.1 (2026-06-11) — approved: defaults set to A=5 + C=2 (10 concurrent), `tqdm` adopted, auto-clamp added for small workloads
 
 ## 1. Goal
 
@@ -13,7 +17,12 @@ Two layers of parallelism:
 - **A) Intra-PDF:** `ThreadPoolExecutor` with N workers per process
 - **C) Inter-PDF:** `ProcessPoolExecutor` with M processes dividing the batch
 
-Safe defaults: **A=on (max_workers=5)**, **C=off (num_processes=1)**. User opt-in for combining A+C.
+**Default behavior (when `--parallel` is set):** A=on (max_workers=5) + C=on (num_processes=2). Total concurrency = 10 simultaneous LLM calls.
+
+**Opt-outs:**
+- Omit `--parallel` → unchanged sequential behavior (backwards compat)
+- `--parallel --num-processes 1` → A=5 only (5 concurrent)
+- `--parallel --max-workers 1` → C=2 only (2 concurrent, mostly pointless but allowed)
 
 ## 2. Scope
 
@@ -35,12 +44,14 @@ Safe defaults: **A=on (max_workers=5)**, **C=off (num_processes=1)**. User opt-i
 
 ## 3. Architecture
 
-New module: `PDFAnalyzer/parallel.py` (~150-250 LOC, focus on composition).
+New module: `PDFAnalyzer/parallel.py` (~200-250 LOC, focus on composition).
 
 Logical diagram:
 
 ```
 main.py ---> run_pipeline_parallel()         [NEW, new entry point]
+                |
+                +-- len(pdfs) < num_processes ? --> auto-clamp to len(pdfs)
                 |
                 +-- num_processes > 1 ? --> ProcessPoolExecutor
                 |                                |
@@ -53,7 +64,7 @@ main.py ---> run_pipeline_parallel()         [NEW, new entry point]
                 |                                                        +-- _evaluate_one_occurrence()  [NEW]
                 |                                                        +-- ThreadPoolExecutor(max_workers=5)
                 |
-                +-- num_processes == 1 --> process_single_pdf_v2() directly
+                +-- num_processes == 1 --> process_single_pdf_v2() directly (in calling process)
 ```
 
 ### New functions in `PDFAnalyzer/parallel.py`
@@ -66,7 +77,7 @@ main.py ---> run_pipeline_parallel()         [NEW, new entry point]
 | `analyze_occurrences_parallel(...)` | Mirrors `analyze_occurrences` (same inputs, same outputs). Iterates categories; per category, submits occurrences to `run_with_concurrency_limit`; on_result writes to accumulator. At end, writes `_significant_paragraphs_category_N.txt` files. Returns `dict filtered_enabler_occurrences`. | ~50 |
 | `process_single_pdf_v2(...)` | Mirrors `process_single_pdf` but uses `analyze_occurrences_parallel`. Loads PDF, extracts text, loads keywords, runs enabler_occurrences, writes summary files, saves cost. | ~30 |
 | `_worker_process_entry(pdf_paths_chunk, ...)` | Entry point for `ProcessPoolExecutor` (top-level, picklable). Iterates PDFs in chunk, calls `process_single_pdf_v2` for each. | ~20 |
-| `run_pipeline_parallel(...)` | Top-level coordinator. Divides `pdf_indices` into chunks. If `num_processes==1`: runs sequentially in thread pool. If `num_processes>1`: uses `ProcessPoolExecutor`. | ~40 |
+| `run_pipeline_parallel(...)` | Top-level coordinator. **First action: auto-clamp num_processes to len(pdf_indices).** Then either runs sequentially in a thread pool (num_processes==1) or uses ProcessPoolExecutor (num_processes>1). | ~40 |
 
 ### Modifications in `main.py` (minimal, additive only)
 
@@ -74,8 +85,8 @@ In `parse_arguments` (L567-606):
 
 ```python
 --max-workers N          [default 5, type int]
---num-processes N        [default 1, type int]
---parallel               [store_true, opt-in flag]
+--num-processes N        [default 2, type int]
+--parallel               [store_true, opt-in flag; default off = sequential for backwards compat]
 --log-level LEVEL        [quiet|normal|verbose|debug, default normal]
 --profile                [store_true, prints total time at end]
 ```
@@ -83,11 +94,19 @@ In `parse_arguments` (L567-606):
 In `main()` (L607+):
 
 ```python
-if args.parallel and (max_workers > 1 or num_processes > 1):
+if args.parallel:
+    # New defaults: max_workers=5, num_processes=2 (10 concurrent)
+    # run_pipeline_parallel auto-clamps num_processes to len(pdf_indices)
     from parallel import run_pipeline_parallel
-    run_pipeline_parallel(...)
+    run_pipeline_parallel(
+        ...,
+        max_workers=args.max_workers,
+        num_processes=args.num_processes,
+        log_level=args.log_level,
+        profile=args.profile,
+    )
 else:
-    # existing code unchanged
+    # existing code unchanged — backwards compatible
 ```
 
 Estimated change to `main.py`: **~15-20 LOC, all additive**.
@@ -104,12 +123,14 @@ Estimated change to `main.py`: **~15-20 LOC, all additive**.
 ### Processes
 
 - `concurrent.futures.ProcessPoolExecutor(max_workers=M)`
-- M configurable, default 1 (= disabled)
+- M configurable, default 2 (active)
 - Each process has its own `LLMAnalyzer`, `call_records`, files
+- If M > len(pdf_indices), `run_pipeline_parallel` auto-clamps to len(pdf_indices) (no warning, no idle-process overhead)
 
 ### Total concurrency
 
-`M × N` (e.g., 2 × 5 = 10)
+`M × N` = 2 × 5 = 10 (default)
+Clamped to `len(pdf_indices) × N` when there are fewer PDFs than processes
 
 ### Limitation
 
@@ -150,17 +171,17 @@ Estimated change to `main.py`: **~15-20 LOC, all additive**.
 - `tqdm.progress_bar` over total occurrences (updated via callback)
 - Per-thread logs suppressed in parallel mode (go to log buffer)
 - Final summary: total time, calls, cost, $/PDF
-- Flag `--log-level {quiet,normal,verbose,debug}` controls verbosity (default `normal`)
+- Flag `--log-level {quiet,normal,verbose|debug}` controls verbosity (default `normal`)
 - Debug mode inactive in parallel (impossible to read interleaved output)
 
 ## 8. CLI / Interface
 
-### New flags (all additive; default = current behavior)
+### New flags (all additive; default = current behavior when `--parallel` is omitted)
 
 ```
 --max-workers N      # 1..50, default 5
---num-processes N    # 1..(cpu_count), default 1
---parallel           # shortcut to force parallel mode (default off)
+--num-processes N    # 1..(cpu_count), default 2 (auto-clamped to len(pdf_indices))
+--parallel           # opt-in flag; without it = unchanged sequential behavior
 --log-level LEVEL    # quiet|normal|verbose|debug, default normal
 --profile            # print total time at end (useful for comparing)
 ```
@@ -170,22 +191,25 @@ Estimated change to `main.py`: **~15-20 LOC, all additive**.
 - `max_workers < 1` → error
 - `num_processes > os.cpu_count()` → warning + clamp
 - `num_processes > 1` with `--debug` → warning (debug is unusable in parallel)
-- `num_processes > 1` with single PDF → warning (overhead > benefit)
+- `num_processes > len(pdf_indices)` → silent auto-clamp (no warning, no idle-process overhead)
 
 ### Example invocations
 
 ```bash
-# current (unchanged)
+# current (unchanged) — no flags = sequential
 python main.py /papers 0 5 cloud.json
 
-# only thread pool, 5 workers
-python main.py /papers 0 5 cloud.json --max-workers 5 --parallel
+# parallel with new defaults: 2 processes x 5 threads = 10 concurrent
+python main.py /papers 0 5 cloud.json --parallel
 
-# 2 processes × 5 threads = 10 concurrent calls
-python main.py /papers 0 5 cloud.json --max-workers 5 --num-processes 2 --parallel
+# A-only (1 process, 5 threads) — for debugging
+python main.py /papers 0 5 cloud.json --parallel --num-processes 1
+
+# C=2 + A=5 explicit (same as default, for clarity in scripts)
+python main.py /papers 0 5 cloud.json --parallel --num-processes 2 --max-workers 5
 
 # profile to see speedup
-python main.py /papers 0 5 cloud.json --max-workers 5 --parallel --profile
+python main.py /papers 0 5 cloud.json --parallel --profile
 ```
 
 ## 9. Testing Strategy
@@ -195,29 +219,32 @@ python main.py /papers 0 5 cloud.json --max-workers 5 --parallel --profile
 - Test `_evaluate_one_occurrence` with mock LLM
 - Test `SharedAccumulator` for race conditions (10 threads, 100 ops)
 - Test `run_with_concurrency_limit` with slow mock
+- Test `run_pipeline_parallel` auto-clamp when `num_processes > len(pdf_indices)`
 
 ### Phase 2: Integration (1 PDF, smoke test)
 
-- Re-run `NIST.SP.800-207` with `--max-workers 5`
+- Re-run `NIST.SP.800-207` with `--parallel` (defaults: A=5, C=2)
+- **Note:** with 1 PDF, auto-clamp reduces to C=1 → A=5 only (5 concurrent)
 - Verify:
-  - **Time:** <= 3 min (sequential ~10 min)
+  - **Time:** <= 3 min (sequential ~10 min, 3x with A=5)
   - **Cost:** within 5% of sequential
   - **Files generated:** same names, valid contents
   - **`_occurrences.txt`:** same counts (significant vs total)
 
 ### Phase 3: Validation (6 PDFs, --profile)
 
-- Run all 6 PDFs with `--max-workers 5`
-- Run all 6 PDFs with `--max-workers 5 --num-processes 2`
-- Compare time and cost
+- Run all 6 PDFs with `--parallel` (defaults: A=5, C=2, 10 concurrent)
+- Run all 6 PDFs with `--parallel --num-processes 1` (A=5 only, 5 concurrent) for comparison
+- Compare time and cost across both
 - Verify ALL `_*.txt` files generated
 - Diff `_all_category_results.txt` against previous baseline
 
 ### Acceptance criteria
 
-- Default (no flags) = behavior identical to current
-- `--parallel` with 1 PDF: speedup >= 3x, cost delta < 5%
-- `--parallel --num-processes 2` with 6 PDFs: speedup >= 5x
+- Default (no flags) = behavior identical to current (sequential, no surprise)
+- `--parallel` with 1 PDF: speedup >= 3x, cost delta < 5% (auto-clamp engages C=1)
+- `--parallel` with 6 PDFs: speedup >= 5x (10 concurrent vs 1)
+- `--parallel --num-processes 1` with 6 PDFs: speedup >= 3x (5 concurrent vs 1)
 - Zero crashes, zero data loss
 
 ## 10. Risks and Mitigations
@@ -228,10 +255,10 @@ python main.py /papers 0 5 cloud.json --max-workers 5 --parallel --profile
 | OpenRouter rate limit (429) | Limited `max_workers` + retry |
 | Higher cost (re-done calls) | No retry of failed calls; cost identical |
 | Crash in 1 worker process | Broad try/except + reporting |
-| Overhead > benefit for small workloads | `num_processes=1` default |
+| Overhead > benefit for small workloads (num_processes > len(pdfs)) | Auto-clamp num_processes to len(pdf_indices) inside run_pipeline_parallel |
 | Output order differs from sequential | Documented; not a requirement |
 | Determinism (`random` model) | Already non-deterministic; OK |
-| Memory (4 processes × 200MB) | OK for workloads < 50 PDFs |
+| Memory (2 processes × ~200MB = ~400MB) | OK for workloads < 50 PDFs (fits 16GB VM) |
 | Python GIL | Doesn't matter (I/O bound) |
 | Pickling errors in `ProcessPoolExecutor` | All in top-level functions; use `if __name__ == '__main__':` |
 
@@ -242,7 +269,7 @@ python main.py /papers 0 5 cloud.json --max-workers 5 --parallel --profile
 | `parallel.py` new | ~200-250 LOC |
 | `main.py` modifications | ~15-20 LOC (additive) |
 | `llm_query.py` modifications | 0 LOC |
-| New tests | ~100 LOC (smoke + race condition) |
+| New tests | ~100 LOC (smoke + race condition + auto-clamp) |
 | Docs (readme + skill) | update at end |
 
 Time estimate: 1 focused work session.
@@ -251,7 +278,7 @@ Time estimate: 1 focused work session.
 
 **None for core.** `concurrent.futures` is stdlib.
 
-`tqdm` is **NEW** for progress bar; needs to be added to `requirements.txt`. Alternative: implement progress bar manually with `\r`. **Decision:** tqdm, worth the legibility gain.
+`tqdm` is **NEW** for progress bar; needs to be added to `requirements.txt`. **Decision (2026-06-11):** tqdm — legibility gain is worth the dependency.
 
 ## 13. Proposed Implementation Sequence
 
@@ -259,20 +286,22 @@ Time estimate: 1 focused work session.
 2. `run_with_concurrency_limit` generic
 3. `analyze_occurrences_parallel`
 4. `process_single_pdf_v2`
-5. `_worker_process_entry` + `run_pipeline_parallel`
+5. `_worker_process_entry` + `run_pipeline_parallel` (with auto-clamp logic)
 6. Flags in `main.py` + routing
 7. tqdm + log_level
-8. Smoke test 1 PDF
-9. Test 6 PDFs with `--profile`
+8. Smoke test 1 PDF (NIST.SP.800-207) with `--parallel` — target ≤ 3 min, cost delta < 5%
+9. Test 6 PDFs with `--profile` — both `--parallel` (C=2) and `--parallel --num-processes 1` (C=1) for comparison
 10. Update readme + skill `pdfanalyzer` + commit
 
-## 14. Open Questions
+## 14. Resolved Decisions
 
-- **(a)** Default `--max-workers`: 5 or 10?
-- **(b)** Default `--num-processes`: 1 (off) or 2?
-- **(c)** Add `tqdm` to `requirements.txt`, or implement progress bar manually?
-- **(d)** Save spec also in Obsidian (Dashboard + TOOLS-001)?
+Approved by user on 2026-06-11:
+
+- **(a) Default `--max-workers`: 5** (5 concurrent LLM calls per process)
+- **(b) Default `--num-processes`: 2** (2 processes → 10 concurrent total; auto-clamps to 1 process when there's only 1 PDF)
+- **(c) Add `tqdm` to `requirements.txt`** (progress bar, worth the new dep)
+- **(d) Save spec in Obsidian** (done — `TOOLS-001-paralelizacao-pdfanalyzer.md` + Dashboard updated)
 
 ---
 
-**Next step:** user reviews spec and answers (a)-(d). After approval, implementation begins at step 1 of the sequence above. No code changes until explicit go.
+**Next step:** implement per §13 sequence. No code changes will be made outside that sequence. First action: create `PDFAnalyzer/parallel.py` with `_evaluate_one_occurrence` and `SharedAccumulator`, without touching any function listed in §2 OUT.
