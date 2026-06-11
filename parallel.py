@@ -381,6 +381,8 @@ def process_single_pdf_v2(
     temperature: float = 1.0,
     top_p: float = 1.0,
     output_dir = None,
+    provider: str = "openrouter",
+    local_url: str | None = None,
 ) -> None:
     """Process a single PDF using the parallel occurrence filter.
 
@@ -397,7 +399,6 @@ def process_single_pdf_v2(
         * ``<pdf_stem>_all_category_notes.txt`` — written here.
         * ``<pdf_stem>_occurrences.txt`` — written by
           ``write_occurrences_summary``.
-        * ``<pdf_stem>_article_summary.txt`` — written here.
         * LaTeX notes table — best-effort; silently no-ops if the optional
           module is missing (same as the sequential path).
 
@@ -415,7 +416,6 @@ def process_single_pdf_v2(
         KeywordSearcher,
         LLMAnalyzer,
         Style,
-        extract_article_title_from_filename,
         load_enabler_keywords,
         read_pdf,
         write_occurrences_summary,
@@ -471,7 +471,7 @@ def process_single_pdf_v2(
         + Style.RESET_ALL
     )
 
-    llm_analyzer = LLMAnalyzer(temperature=temperature, top_p=top_p)
+    llm_analyzer = LLMAnalyzer(temperature=temperature, top_p=top_p, provider=provider, local_base_url=local_url)
     # PARALLELIZATION_SPEC v2.0 — Etapa 6 (print suppression):
     # In parallel mode the per-call ``[Cost]`` and ``Selected model:``
     # prints would interleave across threads and processes. Route them
@@ -564,40 +564,9 @@ def process_single_pdf_v2(
         )
         return
 
-    # Fetch article summary from the internet using the PDF filename as the title
-    article_title = extract_article_title_from_filename(pdf_path)
-    print(
-        Fore.CYAN
-        + "\n\n-------------> Fetching article summary from internet..."
-        + Style.RESET_ALL
-    )
-    article_summary = llm_analyzer.fetch_article_summary(
-        article_title, effective_model
-    )
-
-    if article_summary:
-        print(Fore.GREEN + "Article summary obtained successfully." + Style.RESET_ALL)
-        summary_file = (
-            _output_dir / f"{pdf_path.stem}_article_summary.txt"
-        )
-        summary_content = f"{article_title}\n\n{article_summary}"
-        summary_file.write_text(summary_content, encoding="utf-8")
-        print(
-            Fore.GREEN
-            + f"Saved article summary to {summary_file}"
-            + Style.RESET_ALL
-        )
-    else:
-        print(
-            Fore.YELLOW
-            + "Could not obtain article summary. Proceeding without it."
-            + Style.RESET_ALL
-        )
-
     final_prompt_template = llm_analyzer.load_prompt("final_prompt.txt")
 
-    # Collect all category results into a single file (inline L466-518 from
-    # main.process_single_pdf).
+    # Collect all category results into a single file
     all_results = []
 
     for category_index, enabler in enumerate(
@@ -612,12 +581,6 @@ def process_single_pdf_v2(
             + f"\n\n-------------> Processing category {category_index}: {enabler}"
             + Style.RESET_ALL
         )
-
-        article_summary_section = ""
-        if article_summary:
-            article_summary_section = (
-                f"ARTICLE SUMMARY (from internet search):\n{article_summary}\n\n"
-            )
 
         enablers_and_keywords_str = (
             f"{enabler}:\n{', '.join(enabler_keywords[enabler])}\n\n"
@@ -642,11 +605,6 @@ def process_single_pdf_v2(
         final_prompt_with_paragraphs = final_prompt.replace(
             "{significant_paragraphs}", significant_paragraphs_str
         )
-
-        if article_summary_section:
-            final_prompt_with_paragraphs = (
-                article_summary_section + final_prompt_with_paragraphs
-            )
 
         # Get the model used
         selected_model = (
@@ -799,6 +757,8 @@ def _worker_process_entry(
     temperature: float = 1.0,
     top_p: float = 1.0,
     output_dir = None,
+    provider: str = "openrouter",
+    local_url: str | None = None,
 ) -> str:
     """Top-level picklable worker used by ``ProcessPoolExecutor``.
 
@@ -826,6 +786,8 @@ def _worker_process_entry(
         temperature=temperature,
         top_p=top_p,
         output_dir=output_dir,
+        provider=provider,
+        local_url=local_url,
     )
     return str(pdf_path)
 
@@ -842,6 +804,8 @@ def run_pipeline_parallel(
     temperature: float = 1.0,
     top_p: float = 1.0,
     output_dir = None,
+    provider: str = "openrouter",
+    local_url: str | None = None,
 ) -> None:
     """Coordinate the multi-PDF pipeline (Layer C: process pool).
 
@@ -894,6 +858,8 @@ def run_pipeline_parallel(
                 temperature,
                 top_p,
                 output_dir,
+                provider,
+                local_url,
             )
     else:
         with concurrent.futures.ProcessPoolExecutor(max_workers=M) as executor:
@@ -909,6 +875,8 @@ def run_pipeline_parallel(
                     temperature,
                     top_p,
                     output_dir,
+                    provider,
+                    local_url,
                 ): pdf_path
                 for pdf_path in files
             }

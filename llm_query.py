@@ -16,6 +16,20 @@ init(autoreset=True)
 
 
 # ---------------------------------------------------------------------------
+# Provider configuration
+# ---------------------------------------------------------------------------
+
+@dataclass
+class ProviderConfig:
+    """Defines a single LLM provider's connection and behavior settings."""
+    name: str                    # e.g. "openrouter", "local"
+    base_url: str                # API base URL
+    api_key: str                 # real API key or "none" for local
+    models_file: str             # filename for this provider's model list
+    cost_per_call: bool = True   # False → cost_usd=0.0, source="local"
+
+
+# ---------------------------------------------------------------------------
 # Data class to hold the result of one LLM call
 # ---------------------------------------------------------------------------
 
@@ -26,11 +40,12 @@ class CallRecord:
     prompt_tokens: int
     completion_tokens: int
     cost_usd: float
-    source: str  # "openrouter" from response, "generation_endpoint", or "estimate"
+    source: str  # "openrouter", "generation_endpoint", "estimate", or "local"
     latency_s: float | None = None
     temperature: float | None = None
     top_p: float | None = None
     model_version: str | None = None
+    provider: str | None = None  # "openrouter" or "local"
 
 
 # ---------------------------------------------------------------------------
@@ -86,14 +101,19 @@ def validate_sampling_for_model(
 # ---------------------------------------------------------------------------
 
 class LLMAnalyzer:
-    """Wraps OpenRouter API calls with accurate per-call cost tracking.
+    """Wraps LLM API calls with accurate per-call cost tracking.
 
-    Cost accuracy hierarchy (best to worst):
+    Supports multiple providers (openrouter, local). Provider is selected
+    at construction time; one OpenAI client is created for the active provider.
+
+    Cost accuracy hierarchy (best to worst, openrouter only):
     1. ``response.usage.model_extra['cost']`` — returned directly in the
        completion response by OpenRouter; zero-latency, fully accurate.
     2. ``GET /api/v1/generation?id=<id>`` — queried after the call; used only
        when (1) is unavailable.
     3. Local pricing-table estimate — last resort when the API is unreachable.
+
+    For the local provider, cost_usd is always 0.0 and source is "local".
     """
 
     # ------------------------------------------------------------------
@@ -103,26 +123,64 @@ class LLMAnalyzer:
     _GENERATION_RETRIES = 3
     _GENERATION_RETRY_DELAY = 1.5  # seconds
 
-    def __init__(self, api_key: str | None = None, models_file: str = "models.txt",
-                 temperature: float = 1.0, top_p: float = 1.0):
-        self.api_key = api_key or os.getenv("ROUTER_API_KEY")
-        if not self.api_key:
-            print(Fore.RED + "Error: ROUTER_API_KEY not found in environment variables.")
-            raise ValueError("ROUTER_API_KEY not found in environment variables.")
-
+    def __init__(self, api_key: str | None = None,
+                 models_file: str = "remote_models.txt",
+                 temperature: float = 1.0, top_p: float = 1.0,
+                 provider: str = "openrouter",
+                 local_base_url: str | None = None):
         self.temperature = temperature
         self.top_p = top_p
 
-        self.client = OpenAI(
-            api_key=self.api_key,
-            base_url="https://openrouter.ai/api/v1",
-            default_headers={"Authorization": f"Bearer {self.api_key}"},
+        # ----------------------------------------------------------------
+        # Provider registry (MULTIPROVIDER_SPEC v1.2 — E2)
+        # ----------------------------------------------------------------
+        providers: dict[str, ProviderConfig] = {}
+
+        # OpenRouter — always registered if ROUTER_API_KEY exists
+        router_key = api_key or os.getenv("ROUTER_API_KEY")
+        if router_key:
+            providers["openrouter"] = ProviderConfig(
+                name="openrouter",
+                base_url="https://openrouter.ai/api/v1",
+                api_key=router_key,
+                models_file="remote_models.txt",
+                cost_per_call=True,
+            )
+
+        # Local LLM — from env or constructor or default
+        local_url = local_base_url or os.getenv(
+            "LOCAL_LLM_BASE_URL", "http://192.168.0.200:8080/v1"
         )
-        self.models = self._load_models(models_file)
+        providers["local"] = ProviderConfig(
+            name="local",
+            base_url=local_url,
+            api_key="none",
+            models_file="local_models.txt",
+            cost_per_call=False,
+        )
+
+        # Validate selection
+        if provider not in providers:
+            raise ValueError(
+                f"Unknown provider '{provider}'. "
+                f"Available: {list(providers.keys())}"
+            )
+
+        self.active_provider = providers[provider]
+        self.provider_name = provider
+
+        # Create client for active provider
+        self.client = OpenAI(
+            api_key=self.active_provider.api_key,
+            base_url=self.active_provider.base_url,
+        )
+
+        # Load models for active provider
+        self.models = self._load_models(self.active_provider.models_file)
         if not self.models:
             print(
                 Fore.YELLOW
-                + f"Warning: No models loaded from {models_file}. Using default model."
+                + f"Warning: No models loaded from {self.active_provider.models_file}. Using default model."
                 + Style.RESET_ALL
             )
             self.models = ["openai/gpt-4.1-mini-2025-04-14"]
@@ -234,7 +292,7 @@ class LLMAnalyzer:
         Used only when ``response.usage.model_extra['cost']`` is unavailable.
         Returns the ``data`` dict, or *None* on failure.
         """
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        headers = {"Authorization": f"Bearer {self.active_provider.api_key}"}
         params = {"id": generation_id}
 
         for attempt in range(1, self._GENERATION_RETRIES + 1):
@@ -314,9 +372,23 @@ class LLMAnalyzer:
         top_p: float | None = None,
         model_version: str | None = None,
     ) -> None:
-        """Store a CallRecord using the most accurate cost source available."""
+        """Store a CallRecord using the most accurate cost source available.
 
-        if cost_from_response is not None and cost_from_response >= 0:
+        For the local provider (cost_per_call=False), cost_usd is always 0.0
+        and source is "local". OpenRouter cost resolution paths are skipped.
+        """
+
+        if not self.active_provider.cost_per_call:
+            # Local provider — no cost tracking
+            cost_usd = 0.0
+            source = "local"
+            self._emit(
+                Fore.CYAN
+                + f"    [Cost] {model_name}: {prompt_tokens:,} prompt + "
+                + f"{completion_tokens:,} completion = $0.00000000 USD (local inference)"
+                + Style.RESET_ALL
+            )
+        elif cost_from_response is not None and cost_from_response >= 0:
             # Best path: cost is directly in the completion response
             cost_usd = cost_from_response
             source = "openrouter"
@@ -371,6 +443,7 @@ class LLMAnalyzer:
                     temperature=temperature,
                     top_p=top_p,
                     model_version=model_version,
+                    provider=self.provider_name,
                 )
             )
 
@@ -401,14 +474,25 @@ class LLMAnalyzer:
         summary = self.get_usage_summary()
         cost_str = f"${summary['total_cost_usd']:.8f} USD"
 
+        # Count calls per source (including local)
+        local_calls = sum(1 for r in self.call_records if r.source == "local")
+
         lines = [
             "=" * 70,
             "TOKEN USAGE AND COST SUMMARY",
             "=" * 70,
+            f"Provider:                  {self.provider_name}",
             f"Total API calls:          {summary['calls']:,}",
-            f"  - OpenRouter response:  {summary['openrouter_calls']:,}  (cost in response.usage — most accurate)",
-            f"  - Generation endpoint:  {summary['generation_endpoint_calls']:,}  (queried after response)",
-            f"  - Estimated:            {summary['estimated_calls']:,}  (pricing-table fallback)",
+        ]
+        if local_calls > 0:
+            lines.append(f"  - Local:                 {local_calls:,}  (cost $0.00 — local inference)")
+        if summary['openrouter_calls'] > 0:
+            lines.append(f"  - OpenRouter response:  {summary['openrouter_calls']:,}  (cost in response.usage — most accurate)")
+        if summary['generation_endpoint_calls'] > 0:
+            lines.append(f"  - Generation endpoint:  {summary['generation_endpoint_calls']:,}  (queried after response)")
+        if summary['estimated_calls'] > 0:
+            lines.append(f"  - Estimated:            {summary['estimated_calls']:,}  (pricing-table fallback)")
+        lines += [
             "-" * 70,
             f"Prompt tokens:            {summary['prompt_tokens']:,}",
             f"Completion tokens:        {summary['completion_tokens']:,}",
@@ -605,6 +689,7 @@ class LLMAnalyzer:
         # --- Build summary dict ---
         summary: dict = {
             "run_id": run_id,
+            "provider": self.provider_name,
             "pdf_file": pdf_path.name,
             "model_requested": model_requested or "random",
             "temperature": self.temperature,

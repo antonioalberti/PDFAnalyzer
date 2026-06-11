@@ -28,14 +28,6 @@ FilteredOccurrencesByEnabler = Dict[str, List[FilteredOccurrence]]
 SignificantFileMap = Dict[str, Path]
 
 
-def extract_article_title_from_filename(file_path: Path) -> str:
-    """Extract the article title from the PDF filename.
-    
-    Removes the .pdf extension and returns the filename as the article title.
-    """
-    return file_path.stem
-
-
 def extract_extended_context(text: str, keyword_start: int, keyword_end: int) -> str:
     """Return the surrounding sentences for the keyword occurrence."""
 
@@ -306,18 +298,10 @@ def process_category(
     final_prompt_template: str,
     model_name: str | None,
     debug: bool,
-    article_summary: str | None = None,
 ) -> None:
     """Prepare prompts, call the LLM, and persist results for a single enabler."""
 
     print(Fore.CYAN + f"\n\n-------------> Processing category {category_index}: {enabler}" + Style.RESET_ALL)
-
-    # Build the article summary section if available
-    article_summary_section = ""
-    if article_summary:
-        article_summary_section = (
-            f"ARTICLE SUMMARY (from internet search):\n{article_summary}\n\n"
-        )
 
     enablers_and_keywords_str = f"{enabler}:\n{', '.join(enabler_keywords)}\n\n"
 
@@ -334,10 +318,6 @@ def process_category(
     final_prompt_with_paragraphs = final_prompt.replace(
         "{significant_paragraphs}", significant_paragraphs_str
     )
-    
-    # Prepend article summary at the beginning of the prompt if available
-    if article_summary_section:
-        final_prompt_with_paragraphs = article_summary_section + final_prompt_with_paragraphs
 
     if debug:
         print(Fore.YELLOW + "\n    [DEBUG] Context being sent to LLM:" + Style.RESET_ALL)
@@ -368,6 +348,8 @@ def process_single_pdf(
     temperature: float = 1.0,
     top_p: float = 1.0,
     output_dir: Path | None = None,
+    provider: str = "openrouter",
+    local_url: str | None = None,
 ) -> None:
     """Process a single PDF document and produce per-category analyses."""
 
@@ -400,7 +382,7 @@ def process_single_pdf(
     total_occurrences = sum(len(occ) for occ in enabler_occurrences.values())
     print(Fore.GREEN + f"Total keyword occurrences found: {total_occurrences}\n\n" + Style.RESET_ALL)
 
-    llm_analyzer = LLMAnalyzer(temperature=temperature, top_p=top_p)
+    llm_analyzer = LLMAnalyzer(temperature=temperature, top_p=top_p, provider=provider, local_base_url=local_url)
     keyword_occurrence_prompt = llm_analyzer.load_prompt("keyword_occurrence_prompt.txt")
 
     significant_files: SignificantFileMap = {}
@@ -460,21 +442,6 @@ def process_single_pdf(
         )
         return
 
-    # Fetch article summary from the internet using the PDF filename as the title
-    article_title = extract_article_title_from_filename(pdf_path)
-    print(Fore.CYAN + f"\n\n-------------> Fetching article summary from internet..." + Style.RESET_ALL)
-    article_summary = llm_analyzer.fetch_article_summary(article_title, effective_model)
-    
-    if article_summary:
-        print(Fore.GREEN + "Article summary obtained successfully." + Style.RESET_ALL)
-        # Save the article summary to a file for reference (with title + summary)
-        summary_file = output_dir / f"{pdf_path.stem}_article_summary.txt"
-        summary_content = f"{article_title}\n\n{article_summary}"
-        summary_file.write_text(summary_content, encoding="utf-8")
-        print(Fore.GREEN + f"Saved article summary to {summary_file}" + Style.RESET_ALL)
-    else:
-        print(Fore.YELLOW + "Could not obtain article summary. Proceeding without it." + Style.RESET_ALL)
-
     final_prompt_template = llm_analyzer.load_prompt("final_prompt.txt")
 
     # Collect all category results into a single file
@@ -487,13 +454,6 @@ def process_single_pdf(
 
         # Build the category analysis (same as process_category but collect result)
         print(Fore.CYAN + f"\n\n-------------> Processing category {category_index}: {enabler}" + Style.RESET_ALL)
-
-        # Build the article summary section if available
-        article_summary_section = ""
-        if article_summary:
-            article_summary_section = (
-                f"ARTICLE SUMMARY (from internet search):\n{article_summary}\n\n"
-            )
 
         enablers_and_keywords_str = f"{enabler}:\n{', '.join(enabler_keywords[enabler])}\n\n"
 
@@ -510,10 +470,6 @@ def process_single_pdf(
         final_prompt_with_paragraphs = final_prompt.replace(
             "{significant_paragraphs}", significant_paragraphs_str
         )
-        
-        # Prepend article summary at the beginning of the prompt if available
-        if article_summary_section:
-            final_prompt_with_paragraphs = article_summary_section + final_prompt_with_paragraphs
 
         # Get the model used
         selected_model = effective_model if effective_model else llm_analyzer.get_random_model()
@@ -683,6 +639,19 @@ def parse_arguments() -> argparse.Namespace:
         dest="top_p",
         help="Top-p (nucleus sampling) for LLM calls (default: 1.0). Reasoning models only support 1.0.",
     )
+    # -- MULTIPROVIDER_SPEC v1.2 — E8 (provider selection) --
+    parser.add_argument(
+        "--provider",
+        choices=["openrouter", "local"],
+        default="openrouter",
+        help="LLM provider to use (default: openrouter). Use 'local' for local LLM on ProxMox.",
+    )
+    parser.add_argument(
+        "--local-url",
+        default=None,
+        dest="local_url",
+        help="Override the local LLM base URL (default: http://192.168.0.200:8080/v1).",
+    )
     return parser.parse_args()
 
 
@@ -798,6 +767,8 @@ def main() -> None:
             temperature=args.temperature,
             top_p=args.top_p,
             output_dir=run_dir,
+            provider=args.provider,
+            local_url=args.local_url,
         )
         return
 
@@ -816,6 +787,8 @@ def main() -> None:
             temperature=args.temperature,
             top_p=args.top_p,
             output_dir=run_dir,
+            provider=args.provider,
+            local_url=args.local_url,
         )
         print(
             Fore.BLUE

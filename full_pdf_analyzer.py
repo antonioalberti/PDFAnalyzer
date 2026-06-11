@@ -15,12 +15,13 @@ init(autoreset=True)
 
 class FullPDFAnalyzer:
     def __init__(self, source_folder: str, keywords_path: str, output_folder: str,
-                 temperature: float = 1.0, top_p: float = 1.0):
+                 temperature: float = 1.0, top_p: float = 1.0,
+                 provider: str = "openrouter", local_url: str | None = None):
         self.source_folder = Path(source_folder)
         self.keywords_path = Path(keywords_path)
         self.output_folder = Path(output_folder)
         self.model_name = "google/gemini-2.5-pro"
-        self.llm_analyzer = LLMAnalyzer(temperature=temperature, top_p=top_p)
+        self.llm_analyzer = LLMAnalyzer(temperature=temperature, top_p=top_p, provider=provider, local_base_url=local_url)
         self.categories = self._load_categories()
         self._run_dir = None  # Set by run() via R7
 
@@ -295,8 +296,18 @@ if __name__ == "__main__":
     parser.add_argument("--source", required=True, help="Source folder with PDFs")
     parser.add_argument("--keywords", default="cloud.json", help="Path to keywords JSON")
     parser.add_argument("--output", required=True, help="Output folder")
+    # -- MULTIPROVIDER_SPEC v1.2 — E9 (provider selection) --
+    parser.add_argument(
+        "--provider", choices=["openrouter", "local"], default="openrouter",
+        help="LLM provider (default: openrouter). Use 'local' for local LLM.",
+    )
+    parser.add_argument(
+        "--local-url", default=None, dest="local_url",
+        help="Override the local LLM base URL (default: http://192.168.0.200:8080/v1).",
+    )
     
     args = parser.parse_args()
     
-    analyzer = FullPDFAnalyzer(args.source, args.keywords, args.output)
+    analyzer = FullPDFAnalyzer(args.source, args.keywords, args.output,
+                               provider=args.provider, local_url=args.local_url)
     analyzer.run()
