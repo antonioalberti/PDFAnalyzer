@@ -601,6 +601,38 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Enable detailed debug output showing full LLM prompts",
     )
+    # -- PARALLELIZATION_SPEC v2.0 — Etapa 5 (opt-in flags) --
+    parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Run the LLM occurrence filter in parallel (intra-PDF threads + "
+             "inter-PDF processes). Omit for the original sequential behavior.",
+    )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=5,
+        help="Threads per process for the intra-PDF (A) layer (default: 5, "
+             "valid range: 1..50).",
+    )
+    parser.add_argument(
+        "--num-processes",
+        type=int,
+        default=2,
+        help="Processes for the inter-PDF (C) layer (default: 2). Auto-clamped "
+             "to min(num_processes, len(pdf_indices)).",
+    )
+    parser.add_argument(
+        "--log-level",
+        choices=["quiet", "normal", "verbose", "debug"],
+        default="normal",
+        help="Output verbosity (default: normal).",
+    )
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="Print wall-clock time at the end of a parallel run.",
+    )
     return parser.parse_args()
 
 
@@ -608,6 +640,39 @@ def main() -> None:
     """Entry point for command-line execution."""
 
     args = parse_arguments()
+
+    # -- PARALLELIZATION_SPEC v2.0 — Etapa 5 (flag validations) --
+    if args.parallel:
+        if args.max_workers < 1 or args.max_workers > 50:
+            print(
+                Fore.RED
+                + f"Error: --max-workers must be between 1 and 50 (got {args.max_workers})."
+                + Style.RESET_ALL
+            )
+            sys.exit(1)
+        if args.num_processes < 1:
+            print(
+                Fore.RED
+                + f"Error: --num-processes must be >= 1 (got {args.num_processes})."
+                + Style.RESET_ALL
+            )
+            sys.exit(1)
+        import os as _os
+        cpu = _os.cpu_count() or 1
+        if args.num_processes > cpu:
+            print(
+                Fore.YELLOW
+                + f"Warning: --num-processes={args.num_processes} exceeds cpu_count()={cpu}; clamping to {cpu}."
+                + Style.RESET_ALL
+            )
+            args.num_processes = cpu
+        if args.debug:
+            print(
+                Fore.YELLOW
+                + "Warning: --debug output is interleaved and unreadable when "
+                + "combined with --parallel. Prefer --log-level debug for diagnostic runs."
+                + Style.RESET_ALL
+            )
 
     source_folder = Path(args.source_folder)
     keywords_path = Path(args.keywords_path)
@@ -650,6 +715,21 @@ def main() -> None:
     )
     for relative_index, file_path in enumerate(files_to_process, start=args.start_index):
         print(f"  {relative_index}: {file_path.name}")
+
+    # -- PARALLELIZATION_SPEC v2.0 — Etapa 5 (routing) --
+    if args.parallel:
+        from parallel import run_pipeline_parallel
+        run_pipeline_parallel(
+            files=files_to_process,
+            keywords_path=keywords_path,
+            max_workers=args.max_workers,
+            num_processes=args.num_processes,
+            min_representative_matches=args.min_representative_matches,
+            model_name=args.model,
+            log_level=args.log_level,
+            profile=args.profile,
+        )
+        return
 
     for file_path in files_to_process:
         print(

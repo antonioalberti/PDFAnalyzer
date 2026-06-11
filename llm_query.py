@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import logging
 import random
+import threading
 import time
 from dataclasses import dataclass
 from collections import defaultdict
@@ -71,6 +73,22 @@ class LLMAnalyzer:
 
         # Per-call billing records
         self.call_records: list[CallRecord] = []
+
+        # Thread-safety primitives (PARALLELIZATION_SPEC v2.0 — Etapa 0):
+        # `random.choice()` uses the shared global RNG and is NOT thread-safe,
+        # so each LLMAnalyzer instance owns its own `random.Random()`. The
+        # lock guards the list append only — `_fetch_generation_stats` and
+        # `_extract_usage` run lock-free because the OpenAI httpx client is
+        # thread-safe and generation-stats calls are idempotent per id.
+        self._lock = threading.Lock()
+        self._rng = random.Random()
+
+        # PARALLELIZATION_SPEC v2.0 — Etapa 6 (print suppression):
+        # When True, ``_record_call`` and ``get_random_model`` route their
+        # human-facing prints to ``logging.debug`` instead of stdout. Set
+        # by ``process_single_pdf_v2`` in parallel mode so per-call
+        # output does not interleave across threads/processes.
+        self.quiet = False
 
         # Pricing table — only used as a last-resort fallback (USD per 1 M tokens)
         self._fallback_pricing: dict[str, dict[str, float]] = {
@@ -241,7 +259,7 @@ class LLMAnalyzer:
             # Best path: cost is directly in the completion response
             cost_usd = cost_from_response
             source = "openrouter"
-            print(
+            self._emit(
                 Fore.CYAN
                 + f"    [Cost] {model_name}: {prompt_tokens:,} prompt + "
                 + f"{completion_tokens:,} completion = ${cost_usd:.8f} USD (OpenRouter response)"
@@ -263,7 +281,7 @@ class LLMAnalyzer:
                 )
                 cost_usd = float(stats.get("total_cost", 0.0))
                 source = "generation_endpoint"
-                print(
+                self._emit(
                     Fore.CYAN
                     + f"    [Cost] {model_name}: {prompt_tokens:,} prompt + "
                     + f"{completion_tokens:,} completion = ${cost_usd:.8f} USD (generation endpoint)"
@@ -273,22 +291,23 @@ class LLMAnalyzer:
                 # Last resort: price table estimation
                 cost_usd = self._estimate_cost(model_name, prompt_tokens, completion_tokens)
                 source = "estimate"
-                print(
+                self._emit(
                     Fore.YELLOW
                     + f"    [Cost] {model_name}: {prompt_tokens:,} prompt + "
                     + f"{completion_tokens:,} completion = ${cost_usd:.8f} USD (estimated)"
                     + Style.RESET_ALL
                 )
 
-        self.call_records.append(
-            CallRecord(
-                model=model_name,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                cost_usd=cost_usd,
-                source=source,
+        with self._lock:
+            self.call_records.append(
+                CallRecord(
+                    model=model_name,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    cost_usd=cost_usd,
+                    source=source,
+                )
             )
-        )
 
     # ------------------------------------------------------------------
     # Usage summary
@@ -406,10 +425,25 @@ class LLMAnalyzer:
             )
         return models
 
+    def _emit(self, text: str) -> None:
+        """Print or log a message depending on the ``quiet`` flag.
+
+        PARALLELIZATION_SPEC v2.0 — Etapa 6: in parallel mode the calling
+        code sets ``self.quiet = True`` so per-call output is suppressed
+        from stdout (where it would interleave across threads and processes)
+        and routed to ``logging.debug`` instead.
+        """
+        if self.quiet:
+            logging.debug(text)
+        else:
+            print(text)
+
     def get_random_model(self) -> str:
         """Select a random model from the loaded list."""
-        selected_model = random.choice(self.models)
-        print(Fore.CYAN + f"Selected model: {selected_model}" + Style.RESET_ALL)
+        # Use the per-instance RNG (thread-safe). `random.choice()` would
+        # touch the shared global state and race under concurrent calls.
+        selected_model = self._rng.choice(self.models)
+        self._emit(Fore.CYAN + f"Selected model: {selected_model}" + Style.RESET_ALL)
         return selected_model
 
     # ------------------------------------------------------------------

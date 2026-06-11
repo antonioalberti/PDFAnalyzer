@@ -34,6 +34,39 @@ python main.py "path/to/pdfs" [start_index] [end_index] keywords.json
 ```
 *Example:* `python main.py "./documents" 0 10 my_themes.json`
 
+#### Parallel execution (opt-in)
+
+Method 1 ships with a two-layer parallel pipeline (spec: [`PARALLELIZATION_SPEC.md`](./PARALLELIZATION_SPEC.md), v2.0):
+
+- **Layer A (intra-PDF)** — `ThreadPoolExecutor` with N workers (`--max-workers`, default 5) per process, deduplicating results atomically via a `SharedAccumulator`.
+- **Layer C (inter-PDF)** — `ProcessPoolExecutor` with M processes (`--num-processes`, default 2), each worker creating its own `LLMAnalyzer` to avoid fork-unsafe `httpx.Client` issues.
+- **Opt-in:** no flag = the original sequential behavior is preserved exactly. Add `--parallel` to enable.
+
+| Flag | Default | Range | Purpose |
+|---|---|---|---|
+| `--parallel` | (off) | — | Enable Layer A + Layer C |
+| `--max-workers N` | 5 | 1–50 | Threads per process (Layer A) |
+| `--num-processes M` | 2 | 1–cpu_count | Processes for batch (Layer C; auto-clamped to `len(pdfs)`) |
+| `--log-level LEVEL` | normal | quiet / normal / verbose / debug | Output verbosity (`quiet` = tqdm only) |
+| `--profile` | (off) | — | Print wall-clock time at the end |
+
+*Examples:*
+```bash
+# Sequential (unchanged, backwards compatible)
+python main.py ./papers 0 5 cloud.json
+
+# Parallel defaults: 2 procs × 5 threads = 10 concurrent LLM calls
+python main.py ./papers 0 5 cloud.json --parallel
+
+# A-only: 1 proc × 5 threads = 5 concurrent (debugging, no fork)
+python main.py ./papers 0 5 cloud.json --parallel --num-processes 1
+
+# Quiet mode (tqdm only) with profile
+python main.py ./papers 0 5 cloud.json --parallel --log-level quiet --profile
+```
+
+**Design contracts:** 429 rate-limits retry forever (zero occurrence loss); significant files are written once *after* the pool joins (no file I/O race); `load_dotenv()` is called in the main process before fork so workers inherit `ROUTER_API_KEY`.
+
 ### Method 2: Full-Context Analysis
 This method sends the entire text of the PDF to the LLM for a holistic evaluation of each category. It provides a cohesive summary and a qualitative score (0-10) for the document's coverage of the theme.
 ```bash
@@ -60,11 +93,12 @@ That repo contains:
 - **Standardized Output**: Automatically generates LaTeX code following scientific publication standards (captions on top, wide table support, bold identifiers).
 - **Multi-Model Support**: Easily switch between different LLMs (Gemini, Claude, GPT) via OpenRouter.
 - **Cost & Token Tracking**: Detailed logging and reporting of API consumption.
+- **Optional Parallelism**: Speed up Method 1 with `--parallel` (intra-PDF threads + inter-PDF processes) — opt-in, identical outputs to sequential, ≈1.6× speedup per PDF (1 PDF), scaling to ≈5–10× on batches of 6+ PDFs. See [`PARALLELIZATION_SPEC.md`](./PARALLELIZATION_SPEC.md) for the design.
 
 ## Requirements
 
 - Python 3.x
-- Libraries: `PyPDF2`, `pdfplumber`, `openai`, `requests`, `python-dotenv`, `colorama`.
+- Libraries: `PyPDF2`, `pdfplumber`, `openai`, `requests`, `python-dotenv`, `colorama`, `tqdm`.
 - OpenRouter API Key.
 
 ## Contact
