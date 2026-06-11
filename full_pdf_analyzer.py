@@ -14,13 +14,20 @@ from llm_query import LLMAnalyzer
 init(autoreset=True)
 
 class FullPDFAnalyzer:
-    def __init__(self, source_folder: str, keywords_path: str, output_folder: str):
+    def __init__(self, source_folder: str, keywords_path: str, output_folder: str,
+                 temperature: float = 1.0, top_p: float = 1.0):
         self.source_folder = Path(source_folder)
         self.keywords_path = Path(keywords_path)
         self.output_folder = Path(output_folder)
         self.model_name = "google/gemini-2.5-pro"
-        self.llm_analyzer = LLMAnalyzer()
+        self.llm_analyzer = LLMAnalyzer(temperature=temperature, top_p=top_p)
         self.categories = self._load_categories()
+        self._run_dir = None  # Set by run() via R7
+
+    @property
+    def _effective_output_dir(self):
+        """Return the timestamped Results dir (R7) if set, else output_folder."""
+        return self._run_dir if self._run_dir is not None else self.output_folder
         
     def _load_categories(self) -> Dict[str, List[str]]:
         with open(self.keywords_path, 'r', encoding='utf-8') as f:
@@ -102,7 +109,7 @@ Considering all above and the current state of the art in the article area, give
             "\\end{table*}"
         ])
         
-        output_path = self.output_folder / "2_alternative_summary_notes_table.tex"
+        output_path = self._effective_output_dir / "2_alternative_summary_notes_table.tex"
         output_path.write_text("\n".join(latex_counts), encoding="utf-8")
         print(Fore.GREEN + f"Saved LaTeX table to {output_path}" + Style.RESET_ALL)
 
@@ -110,7 +117,7 @@ Considering all above and the current state of the art in the article area, give
         summary = self.llm_analyzer.get_usage_summary()
         
         # Find all *_cost.txt files to ensure we have all PDFs
-        cost_files = sorted(list(self.output_folder.glob("*_cost.txt")))
+        cost_files = sorted(list(self._effective_output_dir.glob("*_cost.txt")))
         
         rows = []
         total_calls = summary['calls']
@@ -162,7 +169,7 @@ Considering all above and the current state of the art in the article area, give
             "\\end{table}"
         ])
         
-        output_path = self.output_folder / "2_alternative_cost_table.tex"
+        output_path = self._effective_output_dir / "2_alternative_cost_table.tex"
         output_path.write_text("\n".join(latex_cost), encoding="utf-8")
         print(Fore.GREEN + f"Saved combined LaTeX cost table to {output_path}" + Style.RESET_ALL)
 
@@ -170,7 +177,7 @@ Considering all above and the current state of the art in the article area, give
         summary = self.llm_analyzer.get_usage_summary()
         
         # Find all *_cost.txt files to ensure we have all PDFs
-        cost_files = sorted(list(self.output_folder.glob("*_cost.txt")))
+        cost_files = sorted(list(self._effective_output_dir.glob("*_cost.txt")))
         
         rows = []
         total_prompt = summary['prompt_tokens']
@@ -228,11 +235,19 @@ Considering all above and the current state of the art in the article area, give
             "\\end{table}"
         ])
         
-        output_path = self.output_folder / "2_alternative_token_table.tex"
+        output_path = self._effective_output_dir / "2_alternative_token_table.tex"
         output_path.write_text("\n".join(latex_tokens), encoding="utf-8")
         print(Fore.GREEN + f"Saved combined LaTeX token table to {output_path}" + Style.RESET_ALL)
 
     def run(self):
+        from datetime import datetime as _dt
+        # R7: Create timestamped Results directory under source_folder
+        results_base = self.source_folder / "Results"
+        run_timestamp = _dt.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self._run_dir = results_base / run_timestamp
+        self._run_dir.mkdir(parents=True, exist_ok=True)
+        print(Fore.GREEN + f"Results will be saved to: {self._run_dir}" + Style.RESET_ALL)
+
         pdf_files = sorted(list(self.source_folder.glob("*.pdf")))
         all_results = {} # {pdf_name: {category: note}}
         
@@ -263,8 +278,16 @@ Considering all above and the current state of the art in the article area, give
         self.generate_token_table()
         
         # Save cost summary
-        cost_file = self.output_folder / "2_full_text_analysis_cost.txt"
+        cost_file = self._run_dir / "2_full_text_analysis_cost.txt"
         self.llm_analyzer.print_usage_summary(str(cost_file))
+
+        # -- STATISTICS_SPEC v1.3 — R8 (per-run summary JSON) --
+        self.llm_analyzer.write_summary_json(
+            self._run_dir,
+            Path("2_full_text_analysis.pdf"),  # synthetic stem matching cost file
+            run_id=self._run_dir.name,
+            model_requested=self.model_name,
+        )
 
 if __name__ == "__main__":
     load_dotenv()

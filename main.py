@@ -207,8 +207,11 @@ def write_occurrences_summary(
     enabler_occurrences: OccurrencesByEnabler,
     filtered_enabler_occurrences: FilteredOccurrencesByEnabler,
     classified_keywords: Dict[str, Counter],
+    output_dir: Path | None = None,
 ) -> None:
     """Write a *_occurrences.txt file summarising raw and significant occurrences per category."""
+
+    _output_dir = output_dir if output_dir is not None else pdf_path.parent
 
     sep = "=" * 70
     thin = "-" * 70
@@ -257,7 +260,7 @@ def write_occurrences_summary(
         sep,
     ]
 
-    output_path = pdf_path.parent / f"{pdf_path.stem}_occurrences.txt"
+    output_path = _output_dir / f"{pdf_path.stem}_occurrences.txt"
     try:
         output_path.write_text("\n".join(lines), encoding="utf-8")
         print(Fore.GREEN + f"Saved occurrences summary to {output_path}" + Style.RESET_ALL)
@@ -362,11 +365,18 @@ def process_single_pdf(
     min_representative_matches: int = 1,
     model_name: str = "random",
     debug: bool = False,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    output_dir: Path | None = None,
 ) -> None:
     """Process a single PDF document and produce per-category analyses."""
 
     pdf_path = Path(file_path)
     keywords_file_path = Path(keywords_path)
+
+    # R7: If output_dir is provided, write all output there; otherwise fallback to pdf_path.parent
+    if output_dir is None:
+        output_dir = pdf_path.parent
 
     if not pdf_path.is_file():
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
@@ -390,14 +400,14 @@ def process_single_pdf(
     total_occurrences = sum(len(occ) for occ in enabler_occurrences.values())
     print(Fore.GREEN + f"Total keyword occurrences found: {total_occurrences}\n\n" + Style.RESET_ALL)
 
-    llm_analyzer = LLMAnalyzer()
+    llm_analyzer = LLMAnalyzer(temperature=temperature, top_p=top_p)
     keyword_occurrence_prompt = llm_analyzer.load_prompt("keyword_occurrence_prompt.txt")
 
     significant_files: SignificantFileMap = {}
 
     for index, enabler in enumerate(enabler_occurrences.keys(), start=1):
         file_path_candidate = (
-            pdf_path.parent
+            output_dir
             / f"{pdf_path.stem}_significant_paragraphs_category_{index}.txt"
         )
         significant_files[enabler] = file_path_candidate
@@ -426,6 +436,7 @@ def process_single_pdf(
         write_occurrences_summary(
             pdf_path, enabler_keywords, enabler_occurrences,
             filtered_enabler_occurrences, {},
+            output_dir=output_dir,
         )
         return
 
@@ -445,6 +456,7 @@ def process_single_pdf(
         write_occurrences_summary(
             pdf_path, enabler_keywords, enabler_occurrences,
             filtered_enabler_occurrences, classified_keywords,
+            output_dir=output_dir,
         )
         return
 
@@ -456,7 +468,7 @@ def process_single_pdf(
     if article_summary:
         print(Fore.GREEN + "Article summary obtained successfully." + Style.RESET_ALL)
         # Save the article summary to a file for reference (with title + summary)
-        summary_file = pdf_path.parent / f"{pdf_path.stem}_article_summary.txt"
+        summary_file = output_dir / f"{pdf_path.stem}_article_summary.txt"
         summary_content = f"{article_title}\n\n{article_summary}"
         summary_file.write_text(summary_content, encoding="utf-8")
         print(Fore.GREEN + f"Saved article summary to {summary_file}" + Style.RESET_ALL)
@@ -521,7 +533,7 @@ def process_single_pdf(
 
     # Save all results to a single file
     if all_results:
-        combined_results_file = pdf_path.parent / f"{pdf_path.stem}_all_category_results.txt"
+        combined_results_file = output_dir / f"{pdf_path.stem}_all_category_results.txt"
         combined_results_file.write_text("\n\n".join(all_results), encoding="utf-8")
         print(Fore.GREEN + f"\nSaved all category results to {combined_results_file}" + Style.RESET_ALL)
         
@@ -542,7 +554,7 @@ def process_single_pdf(
                     break
         
         if notes_lines:
-            notes_file = pdf_path.parent / f"{pdf_path.stem}_all_category_notes.txt"
+            notes_file = output_dir / f"{pdf_path.stem}_all_category_notes.txt"
             notes_file.write_text("\n".join(notes_lines), encoding="utf-8")
             print(Fore.GREEN + f"Saved category notes to {notes_file}" + Style.RESET_ALL)
     
@@ -550,16 +562,40 @@ def process_single_pdf(
     write_occurrences_summary(
         pdf_path, enabler_keywords, enabler_occurrences,
         filtered_enabler_occurrences, classified_keywords,
+        output_dir=output_dir,
     )
 
     # Print token usage summary and save to file
-    cost_file = pdf_path.parent / f"{pdf_path.stem}_cost.txt"
+    cost_file = output_dir / f"{pdf_path.stem}_cost.txt"
     llm_analyzer.print_usage_summary(str(cost_file))
+
+    # -- STATISTICS_SPEC v1.3 — R8 (per-run summary JSON) --
+    _sig_count = sum(len(v) for v in filtered_enabler_occurrences.values())
+    _cat_results: dict = {}
+    for _cat in classified_keywords:
+        _occ_found = len(enabler_occurrences.get(_cat, []))
+        _sig_paras = len(filtered_enabler_occurrences.get(_cat, []))
+        _mv_used = sorted({
+            r.model_version for r in llm_analyzer.call_records
+            if r.model_version and r.model == _cat
+        })
+        _cat_results[_cat] = {
+            "occurrences_found": _occ_found,
+            "significant_paragraphs": _sig_paras,
+            **({"model_versions_used": _mv_used} if _mv_used else {}),
+        }
+    llm_analyzer.write_summary_json(
+        output_dir, pdf_path,
+        run_id=output_dir.name,
+        model_requested=effective_model,
+        category_results=_cat_results,
+        significant_paragraphs_count=_sig_count,
+    )
 
     # Generate LaTeX tables with 1_ prefix
     try:
         from generate_notes_table import generate_latex_table
-        generate_latex_table(str(pdf_path.parent), str(keywords_file_path))
+        generate_latex_table(str(output_dir), str(keywords_file_path))
     except ImportError:
         pass
 
@@ -633,6 +669,20 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Print wall-clock time at the end of a parallel run.",
     )
+    # -- STATISTICS_SPEC v1.3 — Etapas E7/E8 (sampling params + validation) --
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=1.0,
+        help="Sampling temperature for LLM calls (default: 1.0). Reasoning models only support 1.0.",
+    )
+    parser.add_argument(
+        "--top-p",
+        type=float,
+        default=1.0,
+        dest="top_p",
+        help="Top-p (nucleus sampling) for LLM calls (default: 1.0). Reasoning models only support 1.0.",
+    )
     return parser.parse_args()
 
 
@@ -677,6 +727,15 @@ def main() -> None:
     source_folder = Path(args.source_folder)
     keywords_path = Path(args.keywords_path)
 
+    # -- STATISTICS_SPEC v1.3 — Etapa E8 (CLI sampling validation) --
+    if args.model != "random":
+        from llm_query import validate_sampling_for_model
+        try:
+            validate_sampling_for_model(args.model, args.temperature, args.top_p, strict=True)
+        except ValueError as e:
+            print(Fore.RED + str(e) + Style.RESET_ALL)
+            sys.exit(2)
+
     if not source_folder.is_dir():
         print(Fore.RED + f"Error: Source folder not found: {source_folder}" + Style.RESET_ALL)
         sys.exit(1)
@@ -716,6 +775,14 @@ def main() -> None:
     for relative_index, file_path in enumerate(files_to_process, start=args.start_index):
         print(f"  {relative_index}: {file_path.name}")
 
+    # -- STATISTICS_SPEC v1.3 — R7 (Results directory with timestamped runs) --
+    from datetime import datetime as _dt
+    results_base = source_folder / "Results"
+    run_timestamp = _dt.now().strftime("%Y-%m-%d_%H-%M-%S")
+    run_dir = results_base / run_timestamp
+    run_dir.mkdir(parents=True, exist_ok=True)
+    print(Fore.GREEN + f"Results will be saved to: {run_dir}" + Style.RESET_ALL)
+
     # -- PARALLELIZATION_SPEC v2.0 — Etapa 5 (routing) --
     if args.parallel:
         from parallel import run_pipeline_parallel
@@ -728,6 +795,9 @@ def main() -> None:
             model_name=args.model,
             log_level=args.log_level,
             profile=args.profile,
+            temperature=args.temperature,
+            top_p=args.top_p,
+            output_dir=run_dir,
         )
         return
 
@@ -743,6 +813,9 @@ def main() -> None:
             min_representative_matches=args.min_representative_matches,
             model_name=args.model,
             debug=args.debug,
+            temperature=args.temperature,
+            top_p=args.top_p,
+            output_dir=run_dir,
         )
         print(
             Fore.BLUE

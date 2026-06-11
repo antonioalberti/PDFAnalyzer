@@ -378,6 +378,9 @@ def process_single_pdf_v2(
     min_representative_matches: int = 1,
     model_name = "random",
     log_level: str = "normal",
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    output_dir = None,
 ) -> None:
     """Process a single PDF using the parallel occurrence filter.
 
@@ -423,6 +426,12 @@ def process_single_pdf_v2(
     pdf_path = _Path(file_path)
     keywords_file_path = _Path(keywords_path)
 
+    # R7: output_dir for Results directory; fallback to pdf_path.parent
+    if output_dir is not None:
+        _output_dir = _Path(output_dir) if not isinstance(output_dir, _Path) else output_dir
+    else:
+        _output_dir = pdf_path.parent
+
     if not pdf_path.is_file():
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
     if not keywords_file_path.is_file():
@@ -462,7 +471,7 @@ def process_single_pdf_v2(
         + Style.RESET_ALL
     )
 
-    llm_analyzer = LLMAnalyzer()
+    llm_analyzer = LLMAnalyzer(temperature=temperature, top_p=top_p)
     # PARALLELIZATION_SPEC v2.0 — Etapa 6 (print suppression):
     # In parallel mode the per-call ``[Cost]`` and ``Selected model:``
     # prints would interleave across threads and processes. Route them
@@ -479,7 +488,7 @@ def process_single_pdf_v2(
     significant_files: SignificantFileMap = {}
     for index, enabler in enumerate(enabler_occurrences.keys(), start=1):
         significant_files[enabler] = (
-            pdf_path.parent
+            _output_dir
             / f"{pdf_path.stem}_significant_paragraphs_category_{index}.txt"
         )
 
@@ -510,6 +519,7 @@ def process_single_pdf_v2(
         write_occurrences_summary(
             pdf_path, enabler_keywords, enabler_occurrences,
             filtered_enabler_occurrences, {},
+            output_dir=_output_dir,
         )
         return
 
@@ -550,6 +560,7 @@ def process_single_pdf_v2(
         write_occurrences_summary(
             pdf_path, enabler_keywords, enabler_occurrences,
             filtered_enabler_occurrences, classified_keywords,
+            output_dir=_output_dir,
         )
         return
 
@@ -567,7 +578,7 @@ def process_single_pdf_v2(
     if article_summary:
         print(Fore.GREEN + "Article summary obtained successfully." + Style.RESET_ALL)
         summary_file = (
-            pdf_path.parent / f"{pdf_path.stem}_article_summary.txt"
+            _output_dir / f"{pdf_path.stem}_article_summary.txt"
         )
         summary_content = f"{article_title}\n\n{article_summary}"
         summary_file.write_text(summary_content, encoding="utf-8")
@@ -665,7 +676,7 @@ def process_single_pdf_v2(
     # Save all results to a single file
     if all_results:
         combined_results_file = (
-            pdf_path.parent / f"{pdf_path.stem}_all_category_results.txt"
+            _output_dir / f"{pdf_path.stem}_all_category_results.txt"
         )
         combined_results_file.write_text(
             "\n\n".join(all_results), encoding="utf-8"
@@ -693,7 +704,7 @@ def process_single_pdf_v2(
 
         if notes_lines:
             notes_file = (
-                pdf_path.parent / f"{pdf_path.stem}_all_category_notes.txt"
+                _output_dir / f"{pdf_path.stem}_all_category_notes.txt"
             )
             notes_file.write_text("\n".join(notes_lines), encoding="utf-8")
             print(
@@ -706,18 +717,42 @@ def process_single_pdf_v2(
     write_occurrences_summary(
         pdf_path, enabler_keywords, enabler_occurrences,
         filtered_enabler_occurrences, classified_keywords,
+        output_dir=_output_dir,
     )
 
     # Print token usage summary and save to file. ``print_usage_summary``
     # is a method on the LLMAnalyzer instance, not a free function in main.
-    cost_file = pdf_path.parent / f"{pdf_path.stem}_cost.txt"
+    cost_file = _output_dir / f"{pdf_path.stem}_cost.txt"
     llm_analyzer.print_usage_summary(str(cost_file))
+
+    # -- STATISTICS_SPEC v1.3 — R8 (per-run summary JSON) --
+    _sig_count = sum(len(v) for v in filtered_enabler_occurrences.values())
+    _cat_results: dict = {}
+    for _cat in classified_keywords:
+        _occ_found = len(enabler_occurrences.get(_cat, []))
+        _sig_paras = len(filtered_enabler_occurrences.get(_cat, []))
+        _mv_used = sorted({
+            r.model_version for r in llm_analyzer.call_records
+            if r.model_version and r.model == _cat
+        })
+        _cat_results[_cat] = {
+            "occurrences_found": _occ_found,
+            "significant_paragraphs": _sig_paras,
+            **({"model_versions_used": _mv_used} if _mv_used else {}),
+        }
+    llm_analyzer.write_summary_json(
+        _output_dir, pdf_path,
+        run_id=_output_dir.name,
+        model_requested=effective_model,
+        category_results=_cat_results,
+        significant_paragraphs_count=_sig_count,
+    )
 
     # Best-effort LaTeX table generation (no-op if generate_notes_table
     # is missing — same as main.process_single_pdf).
     try:
         from generate_notes_table import generate_latex_table
-        generate_latex_table(str(pdf_path.parent), str(keywords_file_path))
+        generate_latex_table(str(_output_dir), str(keywords_file_path))
     except ImportError:
         pass
 
@@ -761,6 +796,9 @@ def _worker_process_entry(
     min_representative_matches: int,
     model_name,
     log_level: str,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    output_dir = None,
 ) -> str:
     """Top-level picklable worker used by ``ProcessPoolExecutor``.
 
@@ -785,6 +823,9 @@ def _worker_process_entry(
         min_representative_matches=min_representative_matches,
         model_name=model_name,
         log_level=log_level,
+        temperature=temperature,
+        top_p=top_p,
+        output_dir=output_dir,
     )
     return str(pdf_path)
 
@@ -798,6 +839,9 @@ def run_pipeline_parallel(
     model_name = "random",
     log_level: str = "normal",
     profile: bool = False,
+    temperature: float = 1.0,
+    top_p: float = 1.0,
+    output_dir = None,
 ) -> None:
     """Coordinate the multi-PDF pipeline (Layer C: process pool).
 
@@ -847,6 +891,9 @@ def run_pipeline_parallel(
                 min_representative_matches,
                 model_name,
                 log_level,
+                temperature,
+                top_p,
+                output_dir,
             )
     else:
         with concurrent.futures.ProcessPoolExecutor(max_workers=M) as executor:
@@ -859,6 +906,9 @@ def run_pipeline_parallel(
                     min_representative_matches,
                     model_name,
                     log_level,
+                    temperature,
+                    top_p,
+                    output_dir,
                 ): pdf_path
                 for pdf_path in files
             }
@@ -875,18 +925,23 @@ def run_pipeline_parallel(
                         + Style.RESET_ALL
                     )
 
-    # Aggregate cost by scanning the output directory of every PDF.
+    # Aggregate cost by scanning the output directory.
     total_calls = 0
     total_cost = 0.0
-    pdf_dirs: set = set()
-    for pdf_path in files:
-        # The function may be called with str or Path; normalize once.
-        pdf_dirs.add(Path(pdf_path).parent)
+    if output_dir is not None:
+        # All cost files are in the single output_dir
+        scan_dirs = [Path(output_dir)] if Path(output_dir).is_dir() else []
+    else:
+        # Legacy: scan each PDF's parent directory
+        pdf_dirs: set = set()
+        for pdf_path in files:
+            pdf_dirs.add(Path(pdf_path).parent)
+        scan_dirs = list(pdf_dirs)
 
-    for pdf_dir in pdf_dirs:
-        if not pdf_dir.is_dir():
+    for scan_dir in scan_dirs:
+        if not scan_dir.is_dir():
             continue
-        for cost_path in pdf_dir.glob("*_cost.txt"):
+        for cost_path in scan_dir.glob("*_cost.txt"):
             calls, cost = _parse_cost_file(cost_path)
             total_calls += calls
             total_cost += cost
