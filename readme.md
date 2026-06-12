@@ -155,20 +155,6 @@ For research-grade analysis, prefer OpenRouter.
 
 The `fetch_article_summary` step (web-search enrichment) was removed from the pipeline to ensure **fair provider comparison** — it was only available via OpenRouter, creating an asymmetric prompt. The method is preserved in `llm_query.py` for ad-hoc use but is not called by the pipeline. As a side benefit, this reduces cost by 1–6 API calls per PDF (no more C2 cost leak from STATISTICS_SPEC v1.3).
 
-## Companion Article (JCC-2026a)
-
-The per-PDF results produced by `main.py` and `full_pdf_analyzer.py` (notes, occurrences, cost/token logs) are the raw material for the LaTeX tables published in the JCC-2026a paper. The post-processing scripts that consolidate those results into the article's tables — together with the `cloud.json` taxonomy used and the end-to-end pipeline runners — live in the companion repository:
-
-→ **[antonioalberti/PaperPDFAnalyzer](https://github.com/antonioalberti/PaperPDFAnalyzer)**
-
-That repo contains:
-- `generate_occurrences.py` — per-PDF and consolidated keyword-occurrence tables
-- `generate_cost_summary.py` — consolidated cost/token tables for both methods
-- `generate_notes_table.py` — qualitative-score comparison matrix
-- `generate_diff_table.py` — Method 1 vs. Method 2 score-diff table
-- `run_all_analysis.sh` / `run_all_analysis.ps1` — full pipeline runners
-- `cloud.json` — the 7-enabler cloud-computing taxonomy used in the paper
-
 ## Key Features
 
 - **Thematic Flexibility**: Define your own categories and keywords in a simple JSON format.
