@@ -1,3 +1,17 @@
-# Local LLM models served by llama.cpp on ProxMox host (192.168.0.200:8080)
-# One model per line, lines starting with # are comments
-gemma-4-26B-A4B-it-Q4_K_M.gguf
+# DEPRECATED — TRIAL_RUNNER_SPEC v1.3 (2026-06-14)
+#
+# In v1.3 the 2x2 design is Method × LLM-Backend, NOT Method × Provider.
+# All four cells (A, B, C, D) are now served by openrouter. There is no
+# "local" cell anymore, so this file is no longer validated by
+# run_trials.py — entries below are kept only as historical reference
+# (the local Gemma-4-26B-A4B-Q4_K_M inference was measured at
+# 0.34 calls/min/worker with 20 GPU layers offloaded, which is why
+# we switched cells C,D to the OpenRouter-hosted full-precision version
+# of the same architecture: google/gemma-4-26b-a4b-it, see
+# PDFAnalyzer/remote_models.txt).
+#
+# If a future experiment needs to re-enable the local LLM path, restore
+# the entry below and update run_trials.py validate_models() to read
+# this file again.
+
+# gemma-4-26B-A4B-it-Q4_K_M.gguf
