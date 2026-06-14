@@ -760,13 +760,32 @@ class LLMAnalyzer:
     # ------------------------------------------------------------------
 
     def _load_models(self, models_file: str) -> list[str]:
-        """Load model names from a text file, ignoring comments and empty lines."""
+        """Load model names from a text file, ignoring comments and empty lines.
+
+        v1.3.1 fix: inline comments (lines that start with a model name
+        followed by `# some note`) are now stripped — previously the
+        loader kept the full line including the `# ...` tail, which
+        caused the model lookup to fail when validate_models() checked
+        `cd_model in self._model_names` (the model name + the trailing
+        comment were never equal to the bare model name).
+        """
         models: list[str] = []
         try:
             with open(models_file, "r", encoding="utf-8") as fh:
                 for line in fh:
+                    # Strip whitespace
                     line = line.strip()
-                    if line and not line.startswith("#"):
+                    if not line:
+                        continue
+                    # Skip whole-line comments
+                    if line.startswith("#"):
+                        continue
+                    # v1.3.1 fix: strip inline comments (anything from `#` onwards)
+                    # but preserve model names that legitimately contain `#`
+                    # by only stripping when `#` is preceded by whitespace.
+                    if " #" in line:
+                        line = line.split(" #", 1)[0].strip()
+                    if line:
                         models.append(line)
             print(
                 Fore.CYAN
