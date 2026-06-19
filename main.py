@@ -90,21 +90,56 @@ def read_pdf(file_path: Path) -> str:
 
 
 def load_enabler_keywords(keywords_path: Path) -> EnablerKeywords:
-    """Load enabler keywords from a JSON file."""
+    """
+    Load enabler keywords from a JSON file.
+
+    Supports two formats:
+      Old: {"cat": ["kw1", "kw2", ...]}
+      New: {"cat": {"description": "...", "keywords": ["kw1", "kw2", ...]}}
+    """
 
     with keywords_path.open("r", encoding="utf-8") as file:
         data = json.load(file)
 
     if not isinstance(data, dict):
-        raise ValueError("Keywords file must contain a JSON object mapping enablers to keyword lists.")
+        raise ValueError("Keywords file must contain a JSON object.")
 
     normalized_data: EnablerKeywords = {}
-    for enabler, keywords in data.items():
-        if not isinstance(keywords, list):
-            raise ValueError(f"Keywords for enabler '{enabler}' must be provided as a list.")
-        normalized_data[str(enabler)] = [str(keyword) for keyword in keywords]
+    for enabler, value in data.items():
+        if isinstance(value, dict):
+            # New format: {"description": "...", "keywords": [...]}
+            keywords = value.get("keywords", [])
+            if not isinstance(keywords, list):
+                raise ValueError(f"Keywords for enabler '{enabler}' must be a list.")
+        elif isinstance(value, list):
+            # Old format: direct list of keywords
+            keywords = value
+        else:
+            raise ValueError(
+                f"Invalid format for enabler '{enabler}': "
+                f"expected list or dict, got {type(value).__name__}."
+            )
+        normalized_data[str(enabler)] = [str(kw) for kw in keywords]
 
     return normalized_data
+
+
+def load_enabler_descriptions(keywords_path: Path) -> Dict[str, str]:
+    """
+    Load category descriptions from a JSON file (new format).
+
+    Returns {enabler_name: description_string}.
+    For old-format JSONs (dict of lists), returns empty descriptions.
+    """
+    with keywords_path.open("r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    descriptions: Dict[str, str] = {}
+    for enabler, value in data.items():
+        if isinstance(value, dict):
+            descriptions[str(enabler)] = str(value.get("description", ""))
+        # Old format: no descriptions available
+    return descriptions
 
 
 def analyze_occurrences(
@@ -116,8 +151,14 @@ def analyze_occurrences(
     debug: bool,
     significant_files: SignificantFileMap | None = None,
     total_occurrences: int | None = None,
+    enabler_descriptions: Dict[str, str] | None = None,
 ) -> FilteredOccurrencesByEnabler:
-    """Filter occurrences using the LLM to keep only significant mentions."""
+    """Filter occurrences using the LLM to keep only significant mentions.
+
+    If ``enabler_descriptions`` is provided, each ``Enabler:`` line in the
+    prompt is followed by a ``Description:`` line so the LLM has richer
+    context to judge significance.
+    """
 
     filtered_enabler_occurrences: FilteredOccurrencesByEnabler = {
         enabler: [] for enabler in enabler_occurrences
@@ -152,8 +193,13 @@ def analyze_occurrences(
             extended_context = extract_extended_context(
                 pdf_text, absolute_start_idx, absolute_start_idx + len(keyword)
             )
+            desc_line = ""
+            if enabler_descriptions:
+                desc = enabler_descriptions.get(enabler, "")
+                if desc:
+                    desc_line = f"\nDescription: {desc}"
             prompt_text = (
-                f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}\nKeyword: {keyword}\nContext:\n{extended_context}"
+                f"{keyword_occurrence_prompt}\n\nEnabler: {enabler}{desc_line}\nKeyword: {keyword}\nContext:\n{extended_context}"
             )
 
             try:
@@ -298,12 +344,23 @@ def process_category(
     final_prompt_template: str,
     model_name: str | None,
     debug: bool,
+    enabler_description: str = "",
 ) -> None:
-    """Prepare prompts, call the LLM, and persist results for a single enabler."""
+    """Prepare prompts, call the LLM, and persist results for a single enabler.
 
+    If ``enabler_description`` is provided, it is included in the prompt context
+    so the LLM has a clearer definition of what the category evaluates.
+    """
     print(Fore.CYAN + f"\n\n-------------> Processing category {category_index}: {enabler}" + Style.RESET_ALL)
 
-    enablers_and_keywords_str = f"{enabler}:\n{', '.join(enabler_keywords)}\n\n"
+    if enabler_description:
+        enablers_and_keywords_str = (
+            f"Category: {enabler}\n"
+            f"Description: {enabler_description}\n"
+            f"Associated keywords: {', '.join(enabler_keywords)}\n\n"
+        )
+    else:
+        enablers_and_keywords_str = f"{enabler}:\n{', '.join(enabler_keywords)}\n\n"
 
     keyword_counts_lines = [f"{enabler}:"]
     for keyword, count in keyword_counter.items():
@@ -374,6 +431,7 @@ def process_single_pdf(
 
     print(Fore.CYAN + f"Loading keywords from: {keywords_file_path}" + Style.RESET_ALL)
     enabler_keywords = load_enabler_keywords(keywords_file_path)
+    enabler_descriptions = load_enabler_descriptions(keywords_file_path)
     print(Fore.GREEN + f"Loaded {len(enabler_keywords)} enabler categories." + Style.RESET_ALL)
 
     keyword_searcher = KeywordSearcher(enabler_keywords)
@@ -405,6 +463,7 @@ def process_single_pdf(
         debug,
         significant_files,
         total_occurrences,
+        enabler_descriptions,
     )
 
     total_matches_summary = print_occurrences(filtered_enabler_occurrences)
@@ -455,7 +514,14 @@ def process_single_pdf(
         # Build the category analysis (same as process_category but collect result)
         print(Fore.CYAN + f"\n\n-------------> Processing category {category_index}: {enabler}" + Style.RESET_ALL)
 
-        enablers_and_keywords_str = f"{enabler}:\n{', '.join(enabler_keywords[enabler])}\n\n"
+        enablers_and_keywords_str = f"{enabler}: {', '.join(enabler_keywords[enabler])}\n\n"
+        enabler_desc = enabler_descriptions.get(enabler, "")
+        if enabler_desc:
+            enablers_and_keywords_str = (
+                f"Category: {enabler}\n"
+                f"Description: {enabler_desc}\n"
+                f"Associated keywords: {', '.join(enabler_keywords[enabler])}\n\n"
+            )
 
         keyword_counts_lines = [f"{enabler}:"]
         for keyword, count in classified_keywords.get(enabler, Counter()).items():
