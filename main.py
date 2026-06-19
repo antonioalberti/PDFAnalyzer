@@ -495,6 +495,7 @@ def process_single_pdf(
         
         # Extract notes and save to separate file
         notes_lines = []
+        import re as _re  # for note sanitization
         for result in all_results:
             # Look for "NOTE: X" pattern at the end of each result
             lines = result.split('\n')
@@ -505,7 +506,10 @@ def process_single_pdf(
                         if l.startswith('-------------> Processing category'):
                             # Extract category number and name
                             cat_info = l.replace('-------------> Processing category ', '').strip()
-                            notes_lines.append(f"{cat_info}: {line.strip()}")
+                            # Sanitize: strip "/10" suffix (e.g., "NOTE: 9/10" → "NOTE: 9")
+                            note_raw = line.strip()
+                            note_cleaned = _re.sub(r'/10\s*$', '', note_raw)
+                            notes_lines.append(f"{cat_info}: {note_cleaned}")
                             break
                     break
         
